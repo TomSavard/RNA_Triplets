@@ -91,11 +91,22 @@ Function Backtrack(i, j, m, w):
 
 ---
 
-Let's redefine what we must do.
+Questions and or Ideas that needs to be discussed :
+
+* the value of theta
+* The value of the energy pairing
+* Input format (what is the common input, for the moment we just have a string : 'ACGUC...')
+* Output format (list of pairs of indices, Dot-Bracket Notation, adjacency matrix, graph representation for better visualization?)
+* do we have standard RNA sequence that can be used for tests to verify correctness ?
+* should add error handling such as input error etc for better readability
+* We are only computing one minimal energy secondary structure S but there are multiple minimum structures. Do we care ? How do we compute ? 
+
+
+
+---
+
+Strand soup in the future...
 
 We start with m strands of various sizes. We select a starting strand s and an ending strand r.
 
 Then for each of the remaining strands we will recursively call the strands to extend the structure until every strand is used. 
-
----
-
