@@ -1,0 +1,13 @@
+#ifndef GLOBAL_VARIABLES_HPP
+#define GLOBAL_VARIABLES_HPP
+
+#include <vector>
+#include <utility>
+
+extern const int theta;
+
+extern const int pair_energy;
+
+extern const std::vector< std::pair<char, char> > possible_pairs;
+
+#endif // GLOBAL_VARIABLES_HPP
