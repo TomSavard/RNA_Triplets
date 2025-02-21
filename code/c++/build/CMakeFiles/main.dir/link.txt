@@ -1,1 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/c++  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -mmacosx-version-min=13.7 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/main.dir/nussinov.cpp.o CMakeFiles/main.dir/global_variables.cpp.o CMakeFiles/main.dir/utilities.cpp.o -o main  /opt/anaconda3/envs/INF551_env/lib/libRNA.a -lm
