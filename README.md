@@ -92,20 +92,20 @@ Function Backtrack(i, j, m, w):
 ## The C++ implementation of nussinov
 
 ### To run 
-
+```
 cd code/c++/build
 cmake ..
 make
 ./main
-
+```
 You should have the execution of the nussinov.cpp
 
 You can also do it like this :
-
+```
 cd code/c++
 make nussinov
 ./nussinov.exe
-
+```
 
 ---
 
