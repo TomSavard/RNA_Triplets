@@ -89,13 +89,22 @@ Function Backtrack(i, j, m, w):
 ```
 
 ---
+## The C++ implementation of nussinov
 
-Questions and or Ideas that needs to be discussed :
+### To run 
 
-* the value of theta
-* The value of the energy pairing
-* Output format (list of pairs of indices, Dot-Bracket Notation, adjacency matrix, graph representation for better visualization?)
+cd code/c++/build
+cmake ..
+make
+./main
 
+You should have the execution of the nussinov.cpp
+
+You can also do it like this :
+
+cd code/c++
+make nussinov
+./nussinov.exe
 
 
 ---
