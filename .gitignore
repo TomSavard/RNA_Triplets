@@ -1,5 +1,7 @@
 INF551_env/
 code/c++/*.exe
 code/c++/build/*
+!/code/c++/build/
+!/code/c++/build/Makefile
 *DS_Store
 *__pycache__/
