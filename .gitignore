@@ -1,5 +1,5 @@
-code/python/__pycache__/
 INF551_env/
-code/python/.DS_Store
 code/c++/*.exe
 code/c++/build/*
+*DS_Store
+*__pycache__/
