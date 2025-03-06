@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <iomanip>
+#include <stack>
 
 
 bool can_pair(char base1, char base2){ // seems ok
@@ -59,16 +60,19 @@ std::string displaySS(const std::vector<std::pair<int,int> >& S,int size){
 
 std::pair<std::vector<std::pair<int,int> >,int> parseSS(const std::string& structure){
     std::vector<std::pair<int,int>> base_pairs;
+    std::stack<int> open_brackets;
     int n = structure.size();
-    int last_index = n-1;
     for (int i=0; i<n; i++){
         if (structure[i] == '('){
-            for (int j = last_index; j>i; --j){
-                if (structure[j]==')'){
-                    base_pairs.emplace_back(i,j);
-                    last_index = j-1;
-                    break;
-                }
+            open_brackets.push(i);}
+        else if (structure[i] == ')'){
+            if (open_brackets.empty()){
+                std::cerr << "parseSS - Unmatched closing bracket at position " << i << std::endl;
+            }
+            else {
+                int j = open_brackets.top();
+                open_brackets.pop();
+                base_pairs.push_back(std::make_pair(j,i));
             }
         }
     }
@@ -76,7 +80,7 @@ std::pair<std::vector<std::pair<int,int> >,int> parseSS(const std::string& struc
 };
 
 
-void print_matrix(const std::vector<std::vector<int>>& m, const std::string& sequence, int cellWidth){
+void print_matrix(const std::vector<std::vector<float>>& m, const std::string& sequence, int cellWidth){
     int n = m.size();
     std::cout << std::string(cellWidth, ' '); // Leading spaces for alignment
     for (int i = 0; i < n; ++i) {
