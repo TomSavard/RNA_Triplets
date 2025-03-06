@@ -21,7 +21,7 @@ void FillMatrix(const std::string& sequence, std::vector<std::vector<int>>& m, i
      * 
      * @return void
      */
-    std::cout << "  Start of FillMatrix" << std::endl;
+    // std::cout << "  Start of FillMatrix" << std::endl;
     int len_seq = sequence.size();
 
     // Initialize the matrix with zeros.
@@ -45,7 +45,7 @@ void FillMatrix(const std::string& sequence, std::vector<std::vector<int>>& m, i
         }
     }
 
-    std::cout << "  End of FillMatrix" << std::endl;
+    // std::cout << "  End of FillMatrix" << std::endl;
 }
 
 
