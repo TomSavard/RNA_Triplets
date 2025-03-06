@@ -83,7 +83,75 @@ private:
 
 
 float inf_energy = 1000000; // We should discuss this value. Simply having a positive energy could be sufficient as any other would be negative for the moment. (Temporary solution)
-// float pair_energy = -1; //! different from the global variable as we need a float type for the std::min
+
+
+
+
+float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M,  std::unordered_map<std::string, std::vector<std::vector<float>>> Nussinov_matrices){
+    /**
+     * @brief Computes the minimum energy for the general case.
+     * 
+     * Detailled description : TO BE DONE
+     * 
+     * @param m : the number of remaining strands in the soup
+     * @param s : the index of the starting strand
+     * @param i : the index of the starting nucleotide of the first strand
+     * @param r : the index of the ending strand
+     * @param j : the index of the ending nucleotide of the last second strand
+     * @param c : the connectivity bit
+     * @param strands : the dictionary of strands (int = index, string = sequence)
+     * @param M : the energy_matrix
+     * 
+     * @return float : the minimum energy
+     */
+
+    float min_value = inf_energy;
+
+    // Case 1 : i is left unpaired //! we have top deal with the border effect. We must add a column to the indices i and j. This column at index strands.length() will be the empty case. // We can also have a border effect in front (for the second strand)
+    min_value = M(m,s,i+1,r,j,c);
+
+    // Case 2 : i is paired to k of strand s
+    for (int k=i+1; k<int(strands.at(s).length()); k++){
+        if (can_pair(strands.at(s)[i],strands.at(s)[k])){
+            float value = pair_energy + Nussinov_matrices[strands.at(s)][i+1][k-1] + M(m,s,k+1,r,j,c);
+            if (value < min_value){
+                min_value = value;
+            }
+        }
+
+    }
+
+    // Case 3 : i is paired to k of new strand t
+    if (m>1){
+        for (int t=0; t<M.get_s_size(); t++){
+            for (int m1=0; m1<m; m1++){
+                int m2 = m - m1 - 1;
+                for (int k=0; k<int(strands.at(t).length()); k++){
+                    if (can_pair(strands.at(s)[i],strands.at(t)[k])){
+                        float value = pair_energy + M(m1,s,i+1,t,k-1,0) + M(m2,t,k+1,r,j,c);
+                        if (value < min_value){
+                            min_value = value;
+                        }
+                    }
+                }
+            }
+        }   
+    }
+
+    // Case 4 : i is paired to k of strand r
+
+    for (int k=0; k<int(strands.at(r).length()); k++){
+        if (can_pair(strands.at(s)[i],strands.at(r)[k])){
+            float value = pair_energy + M(m,s,i+1,r,k-1,0) + Nussinov_matrices[strands.at(r)][k+1][j];
+            if (value < min_value){
+                min_value = value;
+            }
+        }
+    }
+
+    return min_value;
+
+}
 
 
 
@@ -91,13 +159,13 @@ float inf_energy = 1000000; // We should discuss this value. Simply having a pos
 
 
 
-
-void MainAuxiliaryMatrix(int starting_strand, int final_strand, std::unordered_map<int, std::string> strands, Matrix6D& M){
+void MainAuxiliaryMatrix( std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, std::vector<std::vector<float>>> Nussinov_matrices){
     /**
      * @brief Computes the 6D matrix of the strand soup.
      * 
      * Detailled description : Sebastian Will suggested the idea of only computing the "square" 6D matrix and replacing the first one by a function with a disjunction of cases.
      * 
+     * int starting_strand, int final_strand // no longer using these arguments
      * @param starting_strand : index of the first strand inside strands
      * @param final_strand : index of the second strand inside strands
      * @param strands : the dictionary of strands (int = index, string = sequence)
@@ -127,35 +195,32 @@ void MainAuxiliaryMatrix(int starting_strand, int final_strand, std::unordered_m
                         for (int c=0; c<c_max; c++){
                             std::cout << "M[" << m << "][" << s << "][" << i << "][" << r << "][" << j << "][" << c << "] = " << M(m,s,i,r,j,c) << std::endl;
                             if (i >= int(strands[s].length())){// if s is empty //! How can it be empty since i < i_max ?
-                                if(c==1){
-                                    M(m,s,i,r,j,c) = inf_energy;
-                                }
+                                if(c==1){M(m,s,i,r,j,c) = inf_energy;}
                                 else{
-                                    if (m==0){
-                                        M(m,s,i,r,j,c) = Nussinov(strands[r],0,j-1);
-                                    }
-                                    else{
-                                        //TODO : we select the min M[m-1][t][0][r][j-1][1] over all t
+                                    if (m==0){M(m,s,i,r,j,c) = Nussinov_matrices[strands.at(r)][0][j];}
+                                    else{// we select the min M[m-1][t][0][r][j-1][1] over all t
+                                        float min_value = inf_energy;
+                                        for (int t=0; t<s_max; t++){
+                                            if (M(m-1,t,0,r,j,c) < min_value){min_value = M(m-1,t,0,r,j,c);}}
+                                        M(m,s,i,r,j,c) = min_value;
                                     }
                                 }
-
                             }
                             else{
                                 if (j>=int(strands[r].length())){//if r is empty
-                                    if (c==1){
-                                        M(m,s,i,r,j,c) = inf_energy;
-                                    }
+                                    if (c==1){M(m,s,i,r,j,c) = inf_energy;}
                                     else {
-                                        if (m==0){
-                                            M(m,s,i,r,j,c) = Nussinov(strands[s],i,strands[s].length()-1);
-                                        }
-                                        else{
-                                            //TODO : we select the min M[m-1][s][i][t][size(t)-1][1] over all t
+                                        if (m==0){M(m,s,i,r,j,c) = Nussinov_matrices[strands.at(s)][i][strands.at(s).length()];}
+                                        else{// we select the min M[m-1][s][i][t][size(t)-1][1] over all t
+                                            float min_value = inf_energy;
+                                            for (int t=0; t<s_max; t++){
+                                                if (M(m-1,s,i,t,strands[t].length()-1,c) < min_value){min_value = M(m-1,s,i,t,strands[t].length()-1,c);}}
+                                            M(m,s,i,r,j,c) = min_value;
                                         }
                                     }
                                 }
                                 else {
-                                    //TODO : we call the function on m,s,i,r,j,c
+                                    GeneralCaseMinimization(m,s,i,r,j,c,strands,M,Nussinov_matrices);
                                 }
                             }
                         }
@@ -167,9 +232,6 @@ void MainAuxiliaryMatrix(int starting_strand, int final_strand, std::unordered_m
 }
 
 
-
-
-
 int main() {
     std::cout << "\n==================== Strand Soup ====================" << std::endl;
     srand(time(0)); // Initialiser le générateur de nombres aléatoires
@@ -177,7 +239,7 @@ int main() {
     //============= Setting the parameters =============//
     std::cout << "\n========== Setting the parameters ==========" << std::endl;
     int m = 2; // Number of sequences to generate
-    int sequence_length = 4; // length of the sequences
+    int sequence_length = 5; // length of the sequences
     std::cout << "  Number of strands : m = " << m << std::endl;
     std::cout << "  Length of the sequences : " << sequence_length << std::endl;
 
@@ -196,11 +258,11 @@ int main() {
 
     //============= Nussinov matrices =============//
     std::cout << "\n========== Nussinov matrices ==========" << std::endl;
-    std::unordered_map<std::string, std::vector<std::vector<int>>> Nussinov_matrices;
+    std::unordered_map<std::string, std::vector<std::vector<float>>> Nussinov_matrices;
     for (const auto& pair : strands) {
         const auto& seq = pair.second;
         std::cout << "  Energy matrix for sequence : " << seq << std::endl;
-        std::vector<std::vector<int>> energy_matrix;
+        std::vector<std::vector<float>> energy_matrix;
         FillMatrix(seq, energy_matrix);
         Nussinov_matrices[seq] = energy_matrix;
         print_matrix(energy_matrix,seq);
@@ -229,7 +291,7 @@ int main() {
 
     //============= Test of MainAuxiliaryMatrix =============//
     std::cout << "========== Test of MainAuxiliaryMatrix ==========" << std::endl;
-    MainAuxiliaryMatrix(0, 1, strands, M);
+    MainAuxiliaryMatrix(strands, M, Nussinov_matrices);
 
 
 
