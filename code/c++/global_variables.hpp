@@ -6,7 +6,7 @@
 
 extern const int theta;
 
-extern const int pair_energy;
+extern const float pair_energy;
 
 extern const std::vector< std::pair<char, char> > possible_pairs;
 
