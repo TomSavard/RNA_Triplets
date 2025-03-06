@@ -3,7 +3,6 @@ TARGET = main.exe
 TARGET_NUSSINOV = nussinov.exe
 TARGET_UTILITIES = utilities.exe
 TARGET_TEST = test.exe
-TARGET_SOUP = soup.exe
 TARGET_STRAND_SOUP = strand_soup.exe
 
 
@@ -23,8 +22,7 @@ SRCS = main.cpp global_variables.cpp # Ajoutez ici tous les fichiers source de v
 SRCS_NUSSINOV = nussinov.cpp global_variables.cpp utilities.cpp
 SRCS_UTILITIES = utilities.cpp global_variables.cpp
 SRCS_TEST = test.cpp global_variables.cpp utilities.cpp nussinov.cpp
-SRCS_SOUP = soup.cpp global_variables.cpp utilities.cpp nussinov.cpp
-SRCS_SOUP = strand_soup.cpp global_variables.cpp utilities.cpp nussinov.cpp
+SRCS_STRAND_SOUP = strand_soup.cpp global_variables.cpp utilities.cpp nussinov.cpp
 
 
 
@@ -41,19 +39,16 @@ utilities: $(SRCS_UTILITIES)
 
 test: $(SRCS_TEST)
 	$(CC) $(CFLAGS) $(SRCS_TEST) -o $(TARGET_TEST) $(LDFLAGS)
-	
-soup: $(SRCS_SOUP)
-	$(CC) $(CFLAGS) $(SRCS_SOUP) -o $(TARGET_SOUP) $(LDFLAGS)
 
-strand_soup: $(SRCS_SOUP)
-	$(CC) $(CFLAGS) -DSTRAND_SOUP_TEST $(SRCS_SOUP) -o $(TARGET_STRAND_SOUP) $(LDFLAGS)
+strand_soup: $(SRCS_STRAND_SOUP)
+	$(CC) $(CFLAGS) -DSTRAND_SOUP_TEST $(SRCS_STRAND_SOUP) -o $(TARGET_STRAND_SOUP) $(LDFLAGS)
 
 # Règle pour la construction de tous les fichiers
-all: $(TARGET) $(TARGET_NUSSINOV) $(TARGET_UTILITIES) $(TARGET_TEST) $(TARGET_SOUP)
+all: $(TARGET) $(TARGET_NUSSINOV) $(TARGET_UTILITIES) $(TARGET_TEST) $(TARGET_STRAND_SOUP)
 
 
 
 
 # Règle pour nettoyer les fichiers objets et l'exécutable
 clean:
-	rm -f $(TARGET) $(TARGET_NUSSINOV) $(TARGET_UTILITIES) $(TARGET_TEST) $(TARGET_SOUP) $(TARGET_STRAND_SOUP)
+	rm -f $(TARGET) $(TARGET_NUSSINOV) $(TARGET_UTILITIES) $(TARGET_TEST) $(TARGET_STRAND_SOUP)
