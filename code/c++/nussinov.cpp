@@ -59,7 +59,7 @@ void Backtrack(int i, int j, const std::vector<std::vector<float>>& m, const std
      * @param j : the last index of the subsequence
      * @param m : the minimum energy matrix
      * @param sequence : the RNA sequence
-     * @param S : the secondary structure
+     * @param S : the secondary structure (to be filled)
      * @param theta : the minimum distance between paired bases
      * 
      * @return modifies S by reference
