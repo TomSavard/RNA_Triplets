@@ -22,7 +22,7 @@ void FillMatrix(const std::string& sequence, Matrix2D& m, int theta, float pair_
      * @return void
      */
     // std::cout << "  Start of FillMatrix" << std::endl;
-    int len_seq = sequence.size();
+    int len_seq = sequence.size()-1; // The sequence is 1-indexed and the first character is a '$'
 
 
     // Fill the matrix
@@ -31,12 +31,12 @@ void FillMatrix(const std::string& sequence, Matrix2D& m, int theta, float pair_
             // Case A : pos i without partner
             m(i, j) = m(i + 1, j);
             // Case B : pos i and j form a base pair
-            if (can_pair(sequence[i - 1], sequence[j - 1])) {
+            if (can_pair(sequence[i], sequence[j])) {
                 m(i, j) = std::min(m(i, j), m(i + 1, j - 1) + pair_energy);
             }
             // Case C : pairing with another base at index k
             for (int k = i + theta + 1; k < j; k++) {
-                if (can_pair(sequence[i - 1], sequence[k - 1])) {
+                if (can_pair(sequence[i], sequence[k])) {
                     m(i, j) = std::min(m(i, j), m(i + 1, k - 1) + m(k + 1, j) + pair_energy);
                 }
             }
@@ -72,14 +72,14 @@ void Backtrack(int i, int j, const Matrix2D& m, const std::string& sequence, std
             Backtrack(i + 1, j, m, sequence, S, theta);
             return;
         }
-        else if (std::abs(m(i, j) - (m(i + 1, j - 1) + pair_energy)) < epsilon && can_pair(sequence[i - 1], sequence[j - 1])){
+        else if (std::abs(m(i, j) - (m(i + 1, j - 1) + pair_energy)) < epsilon && can_pair(sequence[i], sequence[j])){
             S.push_back(std::make_pair(i,j));
             Backtrack(i + 1, j - 1, m, sequence, S, theta);
             return;
         }
         else {
             for (int k = i + theta + 1; k < j; k++) {
-                if (std::abs(m(i, j) - (m(i + 1, k - 1) + m(k + 1, j) + pair_energy)) < epsilon && can_pair(sequence[i - 1], sequence[k - 1])) {
+                if (std::abs(m(i, j) - (m(i + 1, k - 1) + m(k + 1, j) + pair_energy)) < epsilon && can_pair(sequence[i], sequence[k])) {
                     S.push_back(std::make_pair(i,k));
                     Backtrack(i+1, k - 1, m, sequence, S, theta);
                     Backtrack(k + 1, j, m, sequence, S, theta);
@@ -94,8 +94,8 @@ void Backtrack(int i, int j, const Matrix2D& m, const std::string& sequence, std
 
 #ifdef NUSSINOV_TEST
 int main() {
-    std::string a_sequence = "GCAACUGGCACAAAGGCCUCCUGG";
-    int len_seq = a_sequence.size();
+    std::string a_sequence = "$GCAACUGGCACAAAGGCCUCCUGG";
+    int len_seq = a_sequence.size()-1;
 
     std::cout << "  Input Sequence: " << a_sequence << std::endl;
     std::cout << "  Size of the sequence : " << len_seq << std::endl;

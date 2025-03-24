@@ -118,14 +118,14 @@ void print_matrix(const Matrix2D& m, const std::string& sequence, int cellWidth)
      */
     int n = m.get_rows();
     std::cout << std::string(cellWidth, ' '); // Leading spaces for alignment
-    for (int i = 0; i < n; ++i) {
+    for (int i = 1; i <= n; ++i) {
         std::cout << std::setw(cellWidth) << sequence[i] << " "; 
     }
     std::cout << std::endl;
-    for (int i = 0; i<n; i++){
+    for (int i = 1; i<=n; i++){
         std::cout << std::string(cellWidth, ' ');
-        for (int j =0; j<n; j++){
-            std::cout << std::setw(cellWidth) << m(i+1,j+1) << " ";
+        for (int j = 1; j<=n; j++){
+            std::cout << std::setw(cellWidth) << m(i,j) << " ";
         }
         std::cout << std::endl;
     }
