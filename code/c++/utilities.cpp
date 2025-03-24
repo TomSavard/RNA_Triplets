@@ -6,6 +6,31 @@
 #include <iomanip>
 #include <stack>
 
+Matrix2D::Matrix2D() : rows(0), cols(0) {}
+Matrix2D::Matrix2D(int rows, int cols) : rows(rows), cols(cols) {
+    data = std::vector<std::vector<float>>(rows, std::vector<float>(cols, 0));}
+Matrix2D::Matrix2D(const std::vector<std::vector<float>>& matrix) {
+    rows = matrix.size();
+    cols = matrix.size();
+    data = matrix;
+}
+float& Matrix2D::operator()(int i, int j) {
+    return data[i - 1][j - 1];}
+const float& Matrix2D::operator()(int i, int j) const {
+    return data[i - 1][j - 1];}
+int Matrix2D::get_rows() const {
+    return rows;
+}
+int Matrix2D::get_cols() const {
+    return cols;
+}
+
+
+Matrix2D create_matrix2d(const std::vector<std::vector<float>>& data) {
+    return Matrix2D(data);
+}
+
+
 
 bool can_pair(char base1, char base2){ // seems ok
     for (const auto& pair : possible_pairs){
@@ -44,9 +69,9 @@ std::string displaySS(const std::vector<std::pair<int,int> >& S,int size){
         int i = pair.first;
         int j = pair.second;
 
-        if (i>= 0 && i < size && j >= 0 && j < size){
-            structure[i]='(';
-            structure[j]=')';
+        if (i>= 1 && i <= size && j >= 1 && j <= size){
+            structure[i-1]='(';
+            structure[j-1]=')';
         }
         else {
             std::cerr << "Displayss - Invalid indices: (" << i << ", " << j << ")" << std::endl;
@@ -80,18 +105,18 @@ std::pair<std::vector<std::pair<int,int> >,int> parseSS(const std::string& struc
 };
 
 
-void print_matrix(const std::vector<std::vector<float>>& m, const std::string& sequence, int cellWidth){
+void print_matrix(const Matrix2D& m, const std::string& sequence, int cellWidth){
     /**
      * @brief print a matrix of floats with a given cell width
      * 
-     * @param m (std::vector<std::vector<float>>): the matrix to print
+     * @param m (Matrix2D): the matrix to print
      * @param sequence (std::string): the sequence associated with the matrix
      * @param cellWidth (int): the width of the cells. Parameter for the display (default = 3)
      * 
      * @return void
      * 
      */
-    int n = m.size();
+    int n = m.get_rows();
     std::cout << std::string(cellWidth, ' '); // Leading spaces for alignment
     for (int i = 0; i < n; ++i) {
         std::cout << std::setw(cellWidth) << sequence[i] << " "; 
@@ -100,7 +125,7 @@ void print_matrix(const std::vector<std::vector<float>>& m, const std::string& s
     for (int i = 0; i<n; i++){
         std::cout << std::string(cellWidth, ' ');
         for (int j =0; j<n; j++){
-            std::cout << std::setw(cellWidth) << m[i][j] << " ";
+            std::cout << std::setw(cellWidth) << m(i+1,j+1) << " ";
         }
         std::cout << std::endl;
     }
@@ -158,7 +183,8 @@ int main() {
 
     std::cout << "\n Test of the function print_matrix" << std::endl;
 
-    std::vector<std::vector<float>> matrix = {
+
+    Matrix2D matrix = create_matrix2d({
         {0,0,0,0,1,1,1,1,2,2,2},
         {0,0,0,0,0,0,1,1,1,1,1},
         {0,0,0,0,0,0,0,0,0,1,1},
@@ -170,7 +196,7 @@ int main() {
         {0,0,0,0,0,0,0,0,0,0,0},
         {0,0,0,0,0,0,0,0,0,0,0},
         {0,0,0,0,0,0,0,0,0,0,0},
-    };
+    });
 
     print_matrix(matrix,sequence);
 
