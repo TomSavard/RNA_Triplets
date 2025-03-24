@@ -6,6 +6,7 @@
 #include <limits>
 
 #include "nussinov.hpp"
+#include "utilities.hpp"
 
 
 //=============================================================================================//
@@ -34,22 +35,7 @@
 //=============================================================================================//
 
 
-// Function to generate a random sequence of nucleotides of a given length 
-std::string generate_random_sequence(int length) {
-    /**
-     * @brief generate a random sequence of nucleotides of a given length
-     * 
-     * @param length (int): the length of the sequence
-     * 
-     * @return std::string : the generated sequence
-     */
-    const std::string nucleotides = "ACGU";
-    std::string sequence;
-    for (int i = 0; i < length; ++i) {
-        sequence += nucleotides[rand() % 4];
-    }
-    return sequence;
-}
+
 
 
 class Matrix6D{
@@ -81,6 +67,8 @@ private:
     int m_size, s_size, i_size, r_size, j_size, c_size;
     std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<float>>>>>> data;
 };
+
+
 
 
 
@@ -154,7 +142,8 @@ float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::un
         if (can_pair(strands.at(s)[i],strands.at(r)[k])){
             if (k+1 == int(strands.at(r).length())){
                 float value = pair_energy + M(m,s,i+1,r,k-1,0);
-                if (value < min_value){min_value = value;
+                if (value < min_value){
+                    min_value = value;
                     // std::cout << 4;
                 }}
             else {
@@ -266,7 +255,7 @@ int main() {
     //============= Setting the parameters =============//
     std::cout << "\n========== Setting the parameters ==========" << std::endl;
     int m = 2; // Number of sequences to generate
-    int sequence_length = 5; // length of the sequences
+    int sequence_length = 3; // length of the sequences
     std::cout << "  Number of strands : m = " << m << std::endl;
     std::cout << "  Length of the sequences : " << sequence_length << std::endl;
     std::cout << "  Theta : " << theta << std::endl;
@@ -279,8 +268,8 @@ int main() {
     // for (int i =0; i < m ; i++){
     //     strands[i] = generate_random_sequence(sequence_length);
     // }
-    strands[0] = "CCCCA";
-    strands[1] = "UUUUU";
+    strands[0] = "CAC";
+    strands[1] = "UAU";
     std::cout << "Generated strands:" << std::endl;
     for (const auto& pair : strands){
         std::cout << "  Index " << pair.first << " : " << pair.second << std::endl;
