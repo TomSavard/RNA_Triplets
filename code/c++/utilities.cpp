@@ -89,15 +89,15 @@ std::pair<std::vector<std::pair<int,int> >,int> parseSS(const std::string& struc
     int n = structure.size();
     for (int i=0; i<n; i++){
         if (structure[i] == '('){
-            open_brackets.push(i);}
+            open_brackets.push(i+1);}
         else if (structure[i] == ')'){
             if (open_brackets.empty()){
-                std::cerr << "parseSS - Unmatched closing bracket at position " << i << std::endl;
+                std::cerr << "parseSS - Unmatched closing bracket at position " << i+1 << std::endl;
             }
             else {
                 int j = open_brackets.top();
                 open_brackets.pop();
-                base_pairs.push_back(std::make_pair(j,i));
+                base_pairs.push_back(std::make_pair(j,i+1));
             }
         }
     }
