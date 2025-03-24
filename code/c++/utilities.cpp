@@ -81,6 +81,16 @@ std::pair<std::vector<std::pair<int,int> >,int> parseSS(const std::string& struc
 
 
 void print_matrix(const std::vector<std::vector<float>>& m, const std::string& sequence, int cellWidth){
+    /**
+     * @brief print a matrix of floats with a given cell width
+     * 
+     * @param m (std::vector<std::vector<float>>): the matrix to print
+     * @param sequence (std::string): the sequence associated with the matrix
+     * @param cellWidth (int): the width of the cells. Parameter for the display (default = 3)
+     * 
+     * @return void
+     * 
+     */
     int n = m.size();
     std::cout << std::string(cellWidth, ' '); // Leading spaces for alignment
     for (int i = 0; i < n; ++i) {
@@ -96,6 +106,24 @@ void print_matrix(const std::vector<std::vector<float>>& m, const std::string& s
     }
 };
 
+
+
+
+std::string generate_random_sequence(int length) {
+    /**
+     * @brief generate a random sequence of nucleotides of a given length
+     * 
+     * @param length (int): the length of the sequence
+     * 
+     * @return std::string : the generated sequence
+     */
+    const std::string nucleotides = "ACGU";
+    std::string sequence;
+    for (int i = 0; i < length; ++i) {
+        sequence += nucleotides[rand() % 4];
+    }
+    return sequence;
+}
 
 
 
@@ -130,7 +158,7 @@ int main() {
 
     std::cout << "\n Test of the function print_matrix" << std::endl;
 
-    std::vector<std::vector<int>> matrix = {
+    std::vector<std::vector<float>> matrix = {
         {0,0,0,0,1,1,1,1,2,2,2},
         {0,0,0,0,0,0,1,1,1,1,1},
         {0,0,0,0,0,0,0,0,0,1,1},
@@ -146,6 +174,9 @@ int main() {
 
     print_matrix(matrix,sequence);
 
+
+    std::cout << "\n Test of the function generate_random_sequence" << std::endl;
+    std::cout << "  Random sequence: " << generate_random_sequence(10) << std::endl;
 
 
     return 0;
