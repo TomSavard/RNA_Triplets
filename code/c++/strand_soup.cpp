@@ -121,6 +121,7 @@ float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::un
             float value = pair_energy + Nussinov_matrices[strands.at(s)](i+1,k-1) + M(m,s,k+1,r,j,c);
             if (value < min_value){
                 min_value = value;
+                // std::cout << "CASE2 with k = " << k << std::endl;
             }
         }
 
@@ -135,6 +136,7 @@ float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::un
                     if (can_pair(strands.at(s)[i],strands.at(t)[k])){
                         float value = pair_energy + M(m1,s,i+1,t,k-1,0) + M(m2,t,k+1,r,j,c);
                         if (value < min_value){
+                            // std::cout << "CASE3 with k = " << k << std::endl;
                             min_value = value;
                         }
                     }
@@ -145,19 +147,22 @@ float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::un
 
     // Case 4 : i is paired to k of strand r
 
-    for (int k=1; k<=int(strands.at(r).length())-1; k++){
+    for (int k=1; k<=j; k++){
         if (can_pair(strands.at(s)[i],strands.at(r)[k])){
             if (k == int(strands.at(r).length()-1)){
                 float value = pair_energy + M(m,s,i+1,r,k-1,0);
                 if (value < min_value){
+                    // std::cout << "CASE4 with k = " << k << std::endl;
                     min_value = value;
                 }}
             else {
                 float value = pair_energy + M(m,s,i+1,r,k-1,0) + Nussinov_matrices[strands.at(r)](k+1,j);
                 if (value < min_value){min_value = value;
+                    // std::cout << "CASE4 with k = " << k << std::endl;
                 }}
         }
     }
+    // if (min_value == M(m,s,i+1,r,j,c)){std::cout << "Case 1" << std::endl;}
     return min_value;
 }
 
@@ -232,7 +237,7 @@ void MainAuxiliaryMatrix( std::unordered_map<int, std::string> strands, Matrix6D
                                     }
                                 }
                                 else {
-                                    // std::cout << "CASE C" << std::endl;
+                                    // std::cout << "CASE GENERAL" << std::endl;
                                     M(m,s,i,r,j,c) = GeneralCaseMinimization(m,s,i,r,j,c,strands,M,Nussinov_matrices);
                                 }
                                 
@@ -267,8 +272,8 @@ int main() {
     // for (int i =0; i < m ; i++){
     //     strands[i] = generate_random_sequence(sequence_length);
     // }
-    strands[1] = "$UUA";
-    strands[2] = "$AAC";
+    strands[1] = "$AAU";
+    strands[2] = "$AUU";
     std::cout << "Generated strands:" << std::endl;
     for (const auto& pair : strands){
         std::cout << "  Index " << pair.first << " : " << pair.second << std::endl;
