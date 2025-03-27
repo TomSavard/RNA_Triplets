@@ -4,31 +4,41 @@
 
 We aim at providing a C++ implementation of a dynamic programming scheme for the Strand soup Interaction model. This model is found in the following paper : 
 
-RNA Triplet Repeats: Improved Algorithms for Structure Prediction and Interactions
+**RNA Triplet Repeats: Improved Algorithms for Structure Prediction and Interactions**  
 Kimon Boehmer1, Sarah J. Berkemer1,2, Sebastian Will1, Yann Ponty1
 
 
+
+---
+
+## Project Overview
+
+This project implements the Nussinov algorithm and extends it to the Strand Soup Interaction model for RNA secondary structure prediction.
+
 ___
 
-Our first task is to provide an implementation for the nussinov algorithm. 
-We will make a first implementation in python and then when the logic is well understood, change to a c++ implementation.
-
-___
 
 ## Nussinov algorithm
 
-This algorithm aims at predicting the secondary structure of the RNA. It does so by finding the optimal base-pairing that maximizes the number of base pairs in a sequence.
+This algorithm aims at predicting the secondary structure of a single RNA strand. It does so by finding the optimal base-pairing that maximizes the number of base pairs in a sequence.
 
-#### The problem
+### The problem
 
-Given an RNA sequence S of length n. The goal is to find the structure tha maximizes the number of base pairing.
+Given an RNA sequence S of length n. The goal is to find the structure that maximizes the number of base pairs.
 It is represented via a Matrix M[i,j] :
 - i and j represent indices of bases in the RNA sequence
-- M[i,j] is the maximum number of base pairing in the sequence S[i,j]
+- M[i,j] is the maximum number of base pairs in the sequence S[i,j]
 
-#### Solving
+### Solving
 
-We use a dynamic programming approach. It is composed of two main functions : the filling of the energy matrix and then the reconstruction of the minimum energy structure based on this matrix.
+We use a dynamic programming approach. It is composed of two main functions :
+
+1. **Filling the Minimum Energy Matrix**  
+   Computes the minimum energy matrix using dynamic programming.
+
+2. **Backtracking for the Minimum Energy Structure**  
+   Extracts the optimal RNA secondary structure by tracing back through the computed matrix.
+
 
 ### Function 1 : Filling the minimum energy matrix
 
@@ -89,18 +99,8 @@ Function Backtrack(i, j, m, w):
 ```
 
 ---
-## The C++ implementation of nussinov
 
-### To run 
-```
-cd code/c++/build
-cmake ..
-make
-./main
-```
-You should have the execution of the nussinov.cpp
-
-You can also do it like this :
+#### To run the c++ implementation for Nussinov
 ```
 cd code/c++
 make nussinov
@@ -109,8 +109,59 @@ make nussinov
 
 ---
 
-Strand soup in the future...
+# Strand soup algorithm
 
-We start with m strands of various sizes. We select a starting strand s and an ending strand r.
+### The problem
 
-Then for each of the remaining strands we will recursively call the strands to extend the structure until every strand is used. 
+Instead of considering only one strand, here we consider a soup of strands. The goal is to find the secondary structure that minimizes the energy. Here we do so with a simplistic energy model which maximizes the base pair count.
+
+
+Here is the schematic illustration of the dynamic programming scheme for the Strand Soup Interaction model (base pair-based energy model). The illustration is extracted from the reference paper figure 7.
+
+![schematic illustration](ressources/Strand_soup_diagram.png)
+
+
+### Key Components
+
+1. **Matrix6D Class**  
+   A 6-dimensional matrix used to store energy values for all possible configurations.
+
+2. **MainAuxiliaryMatrix**  
+    Fills the 6D matrix with energy values using a dynamic programming approach.
+
+3. **Backtracking Functions**  
+   - `square_backtrack`: Handles the square case of the Strand Soup problem.
+   - `bubble_backtrack`: Handles the bubble case of the Strand Soup problem.
+   - `nussinov_backtrack`: Handles single-strand backtracking.
+
+4. **Utilities**  
+   Helper functions for matrix manipulation, RNA sequence generation, and structure visualization.
+
+
+## Compilation and Execution
+
+1. **Compile the Strand Soup Algorithm**  
+   Navigate to the `code/c++` directory and run:
+   ```
+   make strand_soup
+   ./strand_soup.exe
+   ```
+
+
+2. **Clean Build Files**  
+    To clean up build files, run:
+    ```
+    make clean
+    ```
+
+
+
+
+
+
+
+
+
+
+
+
