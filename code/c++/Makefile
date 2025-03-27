@@ -2,7 +2,6 @@
 TARGET = main.exe
 TARGET_NUSSINOV = nussinov.exe
 TARGET_UTILITIES = utilities.exe
-TARGET_TEST = test.exe
 TARGET_STRAND_SOUP = strand_soup.exe
 
 
@@ -21,7 +20,6 @@ LDFLAGS =  -L /opt/anaconda3/envs/INF551_env/lib -lRNA -Wl,-rpath,/opt/anaconda3
 SRCS = main.cpp global_variables.cpp # Ajoutez ici tous les fichiers source de votre projet
 SRCS_NUSSINOV = nussinov.cpp global_variables.cpp utilities.cpp
 SRCS_UTILITIES = utilities.cpp global_variables.cpp
-SRCS_TEST = test.cpp global_variables.cpp utilities.cpp nussinov.cpp
 SRCS_STRAND_SOUP = strand_soup.cpp global_variables.cpp utilities.cpp nussinov.cpp
 
 
@@ -37,18 +35,15 @@ nussinov: $(SRCS_NUSSINOV)
 utilities: $(SRCS_UTILITIES)
 	$(CC) $(CFLAGS) -DUTILITIES_TEST $(SRCS_UTILITIES) -o $(TARGET_UTILITIES)
 
-test: $(SRCS_TEST)
-	$(CC) $(CFLAGS) $(SRCS_TEST) -o $(TARGET_TEST) $(LDFLAGS)
-
 strand_soup: $(SRCS_STRAND_SOUP)
 	$(CC) $(CFLAGS) -DSTRAND_SOUP_TEST $(SRCS_STRAND_SOUP) -o $(TARGET_STRAND_SOUP) $(LDFLAGS)
 
 # Règle pour la construction de tous les fichiers
-all: $(TARGET) $(TARGET_NUSSINOV) $(TARGET_UTILITIES) $(TARGET_TEST) $(TARGET_STRAND_SOUP)
+all: $(TARGET) $(TARGET_NUSSINOV) $(TARGET_UTILITIES) $(TARGET_STRAND_SOUP)
 
 
 
 
 # Règle pour nettoyer les fichiers objets et l'exécutable
 clean:
-	rm -f $(TARGET) $(TARGET_NUSSINOV) $(TARGET_UTILITIES) $(TARGET_TEST) $(TARGET_STRAND_SOUP)
+	rm -f $(TARGET) $(TARGET_NUSSINOV) $(TARGET_UTILITIES) $(TARGET_STRAND_SOUP)
