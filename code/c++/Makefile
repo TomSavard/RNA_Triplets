@@ -8,8 +8,8 @@ TARGET_STRAND_SOUP = strand_soup.exe
 
 # Compilateur
 CC = g++
-# Options de compilation
-CFLAGS = -Wall -Wextra -std=c++17 -g -I /opt/anaconda3/envs/INF551_env/include #-I ./../../ViennaRNA-2.7.0/include # -I/opt/anaconda3/envs/INF551_env/include
+# Options de compilation (can add -g to debug)
+CFLAGS = -Wall -Wextra -std=c++17 -I /opt/anaconda3/envs/INF551_env/include #-I ./../../ViennaRNA-2.7.0/include # -I/opt/anaconda3/envs/INF551_env/include
 
 LDFLAGS =  -L /opt/anaconda3/envs/INF551_env/lib -lRNA -Wl,-rpath,/opt/anaconda3/envs/INF551_env/lib # -L ./../../ViennaRNA-2.7.0/lib -lRNA #/opt/anaconda3/envs/INF551_env/lib/libRNA.a -Wl,-rpath,/opt/anaconda3/envs/INF551_env/lib
 
