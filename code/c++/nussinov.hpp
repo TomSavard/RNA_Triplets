@@ -13,13 +13,14 @@
 #ifndef NUSSINOV_HPP
 #define NUSSINOV_HPP
 
-
 #include <vector>
 #include <string>
 #include <utility>
 
 #include "utilities.hpp"
 #include "global_variables.hpp"
+
+
 
 /**
  * @brief Fills the dynamic programming matrix of the Nussinov algorithm
@@ -33,6 +34,7 @@
  * @param pair_energy Energy contribution of a base pair (default: global `pair_energy`).
  */
 void FillMatrix(const std::string& sequence, Matrix2D& m, int theta= ::theta, float pair_energy = ::pair_energy);
+
 
 
 /**
@@ -49,5 +51,7 @@ void FillMatrix(const std::string& sequence, Matrix2D& m, int theta= ::theta, fl
  * @param theta Minimum loop length (default: global `theta`).
  */
 void Backtrack(int i, int j, const Matrix2D& m, const std::string& sequence, std::vector<std::pair<int, int>>& S, int theta = ::theta);
+
+
 
 #endif // NUSSINOV_HPP
