@@ -6,7 +6,6 @@
  * energy values and valid base pair combinations.
  *
  * @date 2025-03
- * @version 1.0
  */
 
 #ifndef GLOBAL_VARIABLES_HPP
