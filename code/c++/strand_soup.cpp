@@ -13,33 +13,6 @@
 #define RED     "\033[31m"
 #define GREEN   "\033[32m"
 
-//=============================================================================================//
-
-
-// Here we want to implement the strand soup interaction
-//This is described in the paper AIMoB_submitted version figure 7
-
-// There are two different parts
-
-// 1. The genneral case (represented with a circle on the figure) with two strands.
-// 2. The special case where we have to check for emptiness (represented with a square on the figure).
-
-
-
-// The set up 
-
-// We have a set of strands S = {s1, s2, ..., sn} where each strand is a sequence of nucleotides.
-// We select a starting strand s and an ending strand r.
-// then we have to iteratively compute each element of a 6D matrixes.
-// We are have to go bottom up in the matrices. We follow the lexicographic order (m,s-i,r,j,c)
-// Once this will be done, we will have to backtrack to find the optimal secondary structure. (How is the backtrack done ?)
-
-
-
-//=======================================================================================================//
-
-
-
 
 
 //======================================    The Classes    ==============================================//
@@ -103,9 +76,6 @@ class output_backtrack{
      * 
      */
     public:
-    ~output_backtrack() {
-    std::cout << "Destructor called for output_backtrack" << std::endl;
-    }
     void add_sequence(int sequence){
         list_of_sequences.push_back(sequence);
     }
@@ -131,13 +101,13 @@ class output_backtrack{
         }}
 
     void print() const{
-        std::cout << "Sequences: ";
+        std::cout << "Ordered list of sequences: ";
         for (const auto& seq : list_of_sequences){
             std::cout << seq << " ";
         }
         std::cout << std::endl;
 
-        std::cout << "Pairs: ";
+        std::cout << "Pairs:  ";
         for (const auto& pair : list_of_pairs){
             std::cout << "(" << pair[0] << "," << pair[1] << "," << pair[2] << "," << pair[3] << ") ";
         }
@@ -358,6 +328,9 @@ std::vector<int> Find_start_backtrack(Matrix6D& M){
             }
         }
     }
+    if (min_value == inf_energy){
+        throw std::runtime_error("No valid starting point found by Find_start_backtrack in the given energy matrix");
+    }
     return starting_point;
 }
 
@@ -386,7 +359,7 @@ output_backtrack nussinov_backtrack(int s, int i, int j,std::unordered_map<int, 
      * 
      * @return output_backtrack : the secondary structure
      */
-    std::cout << "Nussinov backtrack" << std::endl;
+    // std::cout << "Nussinov backtrack" << std::endl;
     if (j-i < theta){
         return output_backtrack();
     }
@@ -423,7 +396,7 @@ output_backtrack nussinov_backtrack(int s, int i, int j,std::unordered_map<int, 
 
 
 
-output_backtrack bubble_bakctrack(int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> Nussinov_matrices){
+output_backtrack bubble_backtrack(int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> Nussinov_matrices){
     /**
      * @brief Backtrack the bubble case.
      * 
@@ -447,15 +420,15 @@ output_backtrack bubble_bakctrack(int m, int s, int i, int r, int j, int c, std:
 
     //CASE 1 : i is left unpaired
     if (M(m,s,i,r,j,c) == M(m,s,i+1,r,j,c)){
-        std::cout << "CASE1" << std::endl;
-        return bubble_bakctrack(m,s,i+1,r,j,c,strands,M,Nussinov_matrices);
+        // std::cout << "CASE1" << std::endl;
+        return bubble_backtrack(m,s,i+1,r,j,c,strands,M,Nussinov_matrices);
     }
 
     //CASE 2: i is paired to k of strand s
     for (int k=i+1; k <=int(strands.at(s).length())-1;k++){
         if (can_pair(strands.at(s)[i],strands.at(s)[k])){
             if (M(m,s,i,r,j,c) == pair_energy + Nussinov_matrices[strands.at(s)](i+1,k-1) + M(m,s,k+1,r,j,c)){
-                std::cout << "CASE2" << std::endl;
+                // std::cout << "CASE2" << std::endl;
                 output_backtrack output1 = nussinov_backtrack(s,i+1,k-1,strands,Nussinov_matrices);
                 output1.add_pair(1,i,1,k); // we add the pair between i and k of strand s 
                 output_backtrack output2 = square_backtrack(m,s,k+1,r,j,c,strands,M,Nussinov_matrices);
@@ -473,16 +446,11 @@ output_backtrack bubble_bakctrack(int m, int s, int i, int r, int j, int c, std:
                 for (int k=1; k<=int(strands.at(t).length())-1;k++){
                     if (can_pair(strands.at(s)[i],strands.at(t)[k])){
                         if (M(m,s,i,r,j,c) == pair_energy + M(m1,s,i+1,t,k-1,0) + M(m2,t,k+1,r,j,c)){
-                            std::cout << "CASE3" << std::endl;
                             output_backtrack output1 = square_backtrack(m1,s,i+1,t,k-1,0,strands,M,Nussinov_matrices);
-                            std::cout << "TESTA" << std::endl;
                             output1.add_pair(1,i,1+m1+1,k);
                             output1.add_sequence(t);
                             output_backtrack output2 = square_backtrack(m2,t,k+1,r,j,c,strands,M,Nussinov_matrices); // there is a problem here
-                            std::cout << "TESTB" << std::endl;
                             output2.shift(1+m1);
-                            std::cout << "shift + " << 1+m1+1 << std::endl;
-                            std::cout << "m=" << m << " m1=" << m1 << " m2=" << m2 << std::endl;
                             output1.merge(output2,0);
                             return output1;
                         }
@@ -497,7 +465,7 @@ output_backtrack bubble_bakctrack(int m, int s, int i, int r, int j, int c, std:
         if (can_pair(strands.at(s)[i],strands.at(r)[k])){
             if (k == int(strands.at(r).length()-1)){
                 if (M(m,s,i,r,j,c) == pair_energy + M(m,s,i+1,r,k-1,0)){
-                    std::cout << "CASE4.1" << std::endl;
+                    // std::cout << "CASE4.1" << std::endl;
                     output_backtrack output = square_backtrack(m,s,i+1,r,k-1,0,strands,M,Nussinov_matrices);
                     output.add_pair(1,i,1+m+1,k);
                     return output;
@@ -505,7 +473,7 @@ output_backtrack bubble_bakctrack(int m, int s, int i, int r, int j, int c, std:
             }
             else{
                 if (M(m,s,i,r,j,c) == pair_energy + M(m,s,i+1,r,k-1,0) + Nussinov_matrices[strands.at(r)](k+1,j)){
-                    std::cout << "CASE4.2" << std::endl;
+                    // std::cout << "CASE4.2" << std::endl;
                     output_backtrack output1 = square_backtrack(m,s,i+1,r,k-1,0,strands,M,Nussinov_matrices);
                     output1.add_pair(1,i,1+m+1,k);
                     output_backtrack output2 = nussinov_backtrack(r,k+1,j,strands,Nussinov_matrices);
@@ -584,7 +552,7 @@ output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std:
             }
         }
         else{
-            return bubble_bakctrack(m,s,i,r,j,c,strands,M,Nussinov_matrices);
+            return bubble_backtrack(m,s,i,r,j,c,strands,M,Nussinov_matrices);
         }
     }
     std::cout << "ERROR : Unexpected behaviour in square_backtrack" << std::endl;
@@ -593,7 +561,33 @@ output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std:
 
 
 
+void full_backtrack( std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> Nussinov_matrices){
+    /**
+     * @brief Backtrack the 6D matrix to find the optimal secondary structure.
+     * 
+     * Detailled description : TO BE DONE
+     * 
+     * @param strands : the dictionary of strands (int = index, string = sequence)
+     * @param M : the energy_matrix
+     * @param Nussinov_matrices : the dictionary of Nussinov matrices (string = sequence, Matrix2D = energy matrix)
+     * 
+     * @return void
+     */
 
+    std::vector<int> starting_point;
+    try{
+        starting_point = Find_start_backtrack(M);
+    }
+    catch (const std::runtime_error& e){
+        std::cerr << e.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    std::cout << "Starting point : M(" << starting_point[0] << "," << starting_point[1] << "," << starting_point[2] << "," << starting_point[3] << "," << starting_point[4] << "," << starting_point[5] << ") = " << M(starting_point[0], starting_point[1], starting_point[2], starting_point[3], starting_point[4], starting_point[5]) << std::endl;
+    output_backtrack secondary_structure = square_backtrack(starting_point[0],starting_point[1],starting_point[2],starting_point[3],starting_point[4],starting_point[5],strands,M,Nussinov_matrices);
+    secondary_structure.add_sequence(starting_point[3]);
+    secondary_structure.add_sequence_front(starting_point[1]);
+    secondary_structure.print();
+}
 
 
 
@@ -608,16 +602,14 @@ output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std:
 
 
 
-
-
 int main() {
     std::cout << "\n==================== Strand Soup ====================" << std::endl;
     srand(time(0)); // Initialiser le générateur de nombres aléatoires
 
     //============= Setting the parameters =============//
     std::cout << "\n========== Setting the parameters ==========" << std::endl;
-    int m_start = 4; // Number of sequences to generate
-    int sequence_length = 3; // length of the sequences
+    int m_start = 3; // Number of sequences to generate
+    int sequence_length = 7; // length of the sequences
     std::cout << "  Number of strands : m = " << m_start << std::endl;
     std::cout << "  Length of the sequences : " << sequence_length << std::endl;
     std::cout << "  Theta : " << theta << std::endl;
@@ -630,10 +622,11 @@ int main() {
     // for (int i =0; i < m ; i++){
     //     strands[i] = generate_random_sequence(sequence_length);
     // }
-    strands[1] = "$AAA";
-    strands[2] = "$AAA";
-    strands[3] = "$UUU";
-    strands[4] = "$UUU";
+    strands[1] = "$AAAAAAC";
+    strands[2] = "$GGGGGGU";
+    strands[3] = "$AUUUUUU";
+    // strands[3] = "$UUU";
+    // strands[4] = "$UUU";
     std::cout << "Generated strands:" << std::endl;
     for (const auto& pair : strands){
         std::cout << "  Index " << pair.first << " : " << pair.second << std::endl;
@@ -687,56 +680,60 @@ int main() {
     std::cout << "========== Test of MainAuxiliaryMatrix ==========" << std::endl;
     MainAuxiliaryMatrix(strands, M, Nussinov_matrices);
 
-    std::cout << "========== End of the program ==========" << std::endl;
 
-    std::cout <<" Final result" << std::endl;
-    std::cout << "M(0,1,1,2,3,1) = " << M(0,1,1,2,3,1) << std::endl;
-    std::cout << "M(0,1,1,1,3,1) = " << M(0,1,1,1,3,1) << std::endl;
-    std::cout << "M(0,1,1,1,3,0) = " << M(0,1,1,1,3,0) << std::endl;
-    std::cout << "M(0,2,1,2,3,1) = " << M(0,2,1,2,3,1) << std::endl;
-    std::cout << "M(0,2,1,2,3,0) = " << M(0,2,1,2,3,0) << std::endl;
-
-    std::cout << "========== Backtrack ==========" << std::endl;
-    std::vector<int> starting_point = Find_start_backtrack(M);
-    std::cout << "Starting point : M(" << starting_point[0] << "," << starting_point[1] << "," << starting_point[2] << "," << starting_point[3] << "," << starting_point[4] << "," << starting_point[5] << ") = " << M(starting_point[0], starting_point[1], starting_point[2], starting_point[3], starting_point[4], starting_point[5]) << std::endl;
-
-
-    std::cout << " ========== Test of the class output_backtrack ==========" << std::endl;
-    output_backtrack output;
-    output.print();
-    output.add_sequence(1);
-    output.add_sequence(2);
-    output.print();
-    output.add_pair(1,1,2,2);
-    output.add_pair(1,2,2,3);
-    output.print();
-    output.shift(1);
-    output.print();
+    // std::cout << " ========== Test of the class output_backtrack ==========" << std::endl;
+    // output_backtrack output;
+    // output.print();
+    // output.add_sequence(1);
+    // output.add_sequence(2);
+    // output.print();
+    // output.add_pair(1,1,2,2);
+    // output.add_pair(1,2,2,3);
+    // output.print();
+    // output.shift(1);
+    // output.print();
 
 
-    std::cout << "========== Test of the nussinov_backtrack function ==========" << std::endl;
-    int test_sequence_length = 7;
-    std::unordered_map<int, std::string> test_strands;
-    test_strands[1] = "$AAACUUU";
-    test_strands[2] = "$AAACUUU";
-    std::unordered_map<std::string, Matrix2D> test_Nussinov_matrices;
-    for (const auto& pair : test_strands) {
-        const auto& seq = pair.second;
-        std::cout << "  Energy matrix for sequence : " << seq << std::endl;
-        Matrix2D test_energy_matrix(test_sequence_length, test_sequence_length);
-        FillMatrix(seq, test_energy_matrix);
-        test_Nussinov_matrices[seq] = test_energy_matrix;
-        print_matrix(test_energy_matrix,seq);
-        std::cout << std::endl;
-    }
-    output_backtrack test_output = nussinov_backtrack(1,1,test_sequence_length,test_strands,test_Nussinov_matrices);
-    test_output.print();
+    // std::cout << "========== Test of the nussinov_backtrack function ==========" << std::endl;
+    // int test_sequence_length = 7;
+    // std::unordered_map<int, std::string> test_strands;
+    // test_strands[1] = "$AAACUUU";
+    // test_strands[2] = "$AAACUUU";
+    // std::unordered_map<std::string, Matrix2D> test_Nussinov_matrices;
+    // for (const auto& pair : test_strands) {
+    //     const auto& seq = pair.second;
+    //     std::cout << "  Energy matrix for sequence : " << seq << std::endl;
+    //     Matrix2D test_energy_matrix(test_sequence_length, test_sequence_length);
+    //     FillMatrix(seq, test_energy_matrix);
+    //     test_Nussinov_matrices[seq] = test_energy_matrix;
+    //     print_matrix(test_energy_matrix,seq);
+    //     std::cout << std::endl;
+    // }
+    // output_backtrack test_output = nussinov_backtrack(1,1,test_sequence_length,test_strands,test_Nussinov_matrices);
+    // test_output.print();
 
 
     std::cout << "========== Test of the full_backtrack function ==========" << std::endl;
-    output_backtrack secondary_structure = square_backtrack(2,1,1,3,3,1,strands,M,Nussinov_matrices);
-    secondary_structure.add_sequence(starting_point[3]);
-    secondary_structure.add_sequence_front(starting_point[1]);
-    secondary_structure.print();
+
+    std::cout << " ====== Recall ====== " << std::endl;
+    std::cout << "  Number of strands : m = " << m_start << std::endl;
+    std::cout << "  Length of the sequences : " << sequence_length << std::endl;
+    std::cout << "  Theta : " << theta << std::endl;
+    std::cout << "  Pair energy : " << pair_energy << std::endl;
+    std::cout << "Generated strands:" << std::endl;
+    for (const auto& pair : strands){
+        std::cout << "  Index " << pair.first << " : " << pair.second << std::endl;
+    }
+    std::cout << " ==================== " << std::endl;
+
+
+    full_backtrack(strands, M, Nussinov_matrices);
+    // std::vector<int> starting_point = Find_start_backtrack(M);
+    // std::cout << "Starting point : M(" << starting_point[0] << "," << starting_point[1] << "," << starting_point[2] << "," << starting_point[3] << "," << starting_point[4] << "," << starting_point[5] << ") = " << M(starting_point[0], starting_point[1], starting_point[2], starting_point[3], starting_point[4], starting_point[5]) << std::endl;
+
+    // output_backtrack secondary_structure = square_backtrack(2,1,1,3,3,1,strands,M,Nussinov_matrices);
+    // secondary_structure.add_sequence(starting_point[3]);
+    // secondary_structure.add_sequence_front(starting_point[1]);
+    // secondary_structure.print();
     return 0;
 }
