@@ -1,3 +1,30 @@
+/**
+ * @file utilities.cpp
+ * @brief This file contains the implementation of utility functions and classes used for RNA structure manipulation.
+ * 
+ * The file includes:
+ * - Matrix2D class with methods to manipulate 2D matrices.
+ * - Functions for RNA base pairing and structure conversion (DotBracket (db) to BasePair list (bplist), and vice versa).
+ * - A function to generate random RNA sequences.
+ * - Helper functions for printing matrices and displaying results in a formatted way.
+ * 
+ * These utilities are used in both nussinov and strand_soup
+ * 
+ * 
+ * COMPILATION of this file for testing:
+ * Go to the utilities.ccp directory where the Makefile should also be and run the following command in the terminal:
+ *     make utilities
+ * Execution:
+ * After compilation, run the program with:
+ *     ./utilities.exe
+ *
+ * Dependencies:
+ * - Requires "global_variables.hpp" for global variables. The linking is done by the Makefile
+ *
+ * 
+ * @date 2025-03
+ */
+
 #include "utilities.hpp"
 
 #include <iostream>
@@ -6,33 +33,99 @@
 #include <iomanip>
 #include <stack>
 
+
+//==================== Matrix2D class implementation ====================
+
+/**
+ * @brief Default constructor for Matrix2D class.
+ * 
+ * Initializes the matrix with 0 rows and 0 columns.
+ */
 Matrix2D::Matrix2D() : rows(0), cols(0) {}
+
+/**
+ * @brief Parameterized constructor for Matrix2D class.
+ * 
+ * Initializes the matrix with the given number of rows and columns, setting all elements to 0.
+ * 
+ * @param rows (int): The number of rows in the matrix.
+ * @param cols (int): The number of columns in the matrix.
+ */
 Matrix2D::Matrix2D(int rows, int cols) : rows(rows), cols(cols) {
     data = std::vector<std::vector<float>>(rows, std::vector<float>(cols, 0));}
+
+/**
+ * @brief Constructor for Matrix2D class that initializes it from an existing 2D vector.
+ * 
+ * Copies the data from the given matrix into the Matrix2D object.
+ * 
+ * @param matrix (std::vector<std::vector<float>>): The 2D vector to initialize the matrix from.
+ */
 Matrix2D::Matrix2D(const std::vector<std::vector<float>>& matrix) {
     rows = matrix.size();
-    cols = matrix.size();
+    cols = matrix[0].size();
     data = matrix;
 }
+
+/**
+ * @brief Accessor operator for the Matrix2D class.
+ * 
+ * Allows accessing matrix elements using (i, j) notation. Indices are 1-based.
+ * 
+ * @param i (int): The row index (1-based).
+ * @param j (int): The column index (1-based).
+ * 
+ * @return float&: Reference to the element at position (i, j).
+ */
 float& Matrix2D::operator()(int i, int j) {
     return data[i - 1][j - 1];}
+
+/**
+ * @brief Const accessor operator for the Matrix2D class.
+ * 
+ * Allows accessing matrix elements using (i, j) notation, with read-only access. Indices are 1-based.
+ * 
+ * @param i (int): The row index (1-based).
+ * @param j (int): The column index (1-based).
+ * 
+ * @return const float&: Constant reference to the element at position (i, j).
+ */
 const float& Matrix2D::operator()(int i, int j) const {
     return data[i - 1][j - 1];}
+
+/**
+ * @brief Get the number of rows in the matrix.
+ * 
+ * @return int: The number of rows.
+ */
 int Matrix2D::get_rows() const {
     return rows;
 }
+
+/**
+ * @brief Get the number of columns in the matrix.
+ * 
+ * @return int: The number of columns.
+ */
 int Matrix2D::get_cols() const {
     return cols;
 }
 
 
-Matrix2D create_matrix2d(const std::vector<std::vector<float>>& data) {
-    return Matrix2D(data);
-}
+//==================== RNA structure and base pairing functions ====================
 
 
-
-bool can_pair(char base1, char base2){ // seems ok
+/**
+ * @brief Check if two bases can pair.
+ * 
+ * This function checks if a given pair of RNA bases (base1, base2) can form a valid base pair.
+ * 
+ * @param base1 (char): The first RNA base.
+ * @param base2 (char): The second RNA base.
+ * 
+ * @return bool: True if the bases can form a valid pair, false otherwise.
+ */
+bool can_pair(char base1, char base2){
     for (const auto& pair : possible_pairs){
         if (pair.first == base1 && pair.second == base2){
             return true;
@@ -43,8 +136,16 @@ bool can_pair(char base1, char base2){ // seems ok
 
 
 
-// rappel : l'utilisation de & permet un passage d'argument par référence. On accède à l'objet plutôt que de travailler sur une copie locale. C'est plus économe. On utilise const pour restreindre les modifs.
-void print_pairing(const std::string& sequence, const std::vector<std::pair<int,int> >& S){ // seems ok
+
+/**
+ * @brief Print the base pairing for a given RNA sequence.
+ * 
+ * This function prints all the base pairs in the format (i, j), where i and j are the indices of the paired bases.
+ * 
+ * @param sequence (const std::string&): The RNA sequence.
+ * @param S (const std::vector<std::pair<int,int>>&): A vector of pairs representing the base pairs (i, j).
+ */
+void print_pairing(const std::string& sequence, const std::vector<std::pair<int,int> >& S){
     for (const auto& pair : S){
         int i = pair.first;
         int j = pair.second;
@@ -61,8 +162,17 @@ void print_pairing(const std::string& sequence, const std::vector<std::pair<int,
 
 
 
-
-std::string displaySS(const std::vector<std::pair<int,int> >& S,int size){
+/**
+ * @brief Convert a list of base pairs into a dot-bracket notation string.
+ * 
+ * This function converts a list of base pairs into a string representing the RNA secondary structure in dot-bracket notation.
+ * 
+ * @param S (const std::vector<std::pair<int, int>>&): A vector of base pairs.
+ * @param size (int): The length of the RNA sequence.
+ * 
+ * @return std::string: A string representing the secondary structure in dot-bracket notation.
+ */
+std::string bplist2db(const std::vector<std::pair<int,int> >& S,int size){
     std::string structure(size,'.');
 
     for (const auto& pair : S){
@@ -74,7 +184,7 @@ std::string displaySS(const std::vector<std::pair<int,int> >& S,int size){
             structure[j-1]=')';
         }
         else {
-            std::cerr << "Displayss - Invalid indices: (" << i << ", " << j << ")" << std::endl;
+            std::cerr << "bplist2db - Invalid indices: (" << i << ", " << j << ")" << std::endl;
         }
     }
     return structure;
@@ -82,8 +192,16 @@ std::string displaySS(const std::vector<std::pair<int,int> >& S,int size){
 
 
 
-
-std::pair<std::vector<std::pair<int,int> >,int> parseSS(const std::string& structure){
+/**
+ * @brief Convert a dot-bracket notation string into a list of base pairs.
+ * 
+ * This function parses a dot-bracket notation string and returns the base pairs as a list of pairs (i, j).
+ * 
+ * @param structure (const std::string&): The RNA secondary structure in dot-bracket notation.
+ * 
+ * @return std::pair<std::vector<std::pair<int, int>>, int>: A pair containing the list of base pairs and the length of the sequence.
+ */
+std::pair<std::vector<std::pair<int,int> >,int> db2bplist(const std::string& structure){
     std::vector<std::pair<int,int>> base_pairs;
     std::stack<int> open_brackets;
     int n = structure.size();
@@ -92,7 +210,7 @@ std::pair<std::vector<std::pair<int,int> >,int> parseSS(const std::string& struc
             open_brackets.push(i+1);}
         else if (structure[i] == ')'){
             if (open_brackets.empty()){
-                std::cerr << "parseSS - Unmatched closing bracket at position " << i+1 << std::endl;
+                std::cerr << "db2bplist - Unmatched closing bracket at position " << i+1 << std::endl;
             }
             else {
                 int j = open_brackets.top();
@@ -105,17 +223,16 @@ std::pair<std::vector<std::pair<int,int> >,int> parseSS(const std::string& struc
 };
 
 
+/**
+ * @brief Print a matrix of floats with formatted cell width.
+ * 
+ * This function prints a matrix with a given cell width for proper alignment. The matrix is displayed alongside an associated sequence.
+ * 
+ * @param m (const Matrix2D&): The matrix to be printed.
+ * @param sequence (const std::string&): The RNA sequence associated with the matrix.
+ * @param cellWidth (int): The width of each cell for formatting.
+ */
 void print_matrix(const Matrix2D& m, const std::string& sequence, int cellWidth){
-    /**
-     * @brief print a matrix of floats with a given cell width
-     * 
-     * @param m (Matrix2D): the matrix to print
-     * @param sequence (std::string): the sequence associated with the matrix
-     * @param cellWidth (int): the width of the cells. Parameter for the display (default = 3)
-     * 
-     * @return void
-     * 
-     */
     int n = m.get_rows();
     std::cout << std::string(cellWidth, ' '); // Leading spaces for alignment
     for (int i = 1; i <= n; ++i) {
@@ -133,17 +250,18 @@ void print_matrix(const Matrix2D& m, const std::string& sequence, int cellWidth)
 
 
 
-
+/**
+ * @brief Generate a random RNA sequence of a given length.
+ * 
+ * This function generates a random RNA sequence consisting of the nucleotides 'A', 'C', 'G', and 'U'.
+ * 
+ * @param length (int): The length of the desired sequence.
+ * 
+ * @return std::string: The randomly generated RNA sequence.
+ */
 std::string generate_random_sequence(int length) {
-    /**
-     * @brief generate a random sequence of nucleotides of a given length
-     * 
-     * @param length (int): the length of the sequence
-     * 
-     * @return std::string : the generated sequence
-     */
     const std::string nucleotides = "ACGU";
-    std::string sequence;
+    std::string sequence = "$"; //
     for (int i = 0; i < length; ++i) {
         sequence += nucleotides[rand() % 4];
     }
@@ -156,8 +274,11 @@ std::string generate_random_sequence(int length) {
 
 #ifdef UTILITIES_TEST
 int main() {
-    std::string sequence = "GCAACUGGCAC";
-    std::vector<std::pair<int, int>> S = {{0, 10}, {1, 9}, {2, 8}};
+    std::cout << std::endl << "========== Test of the utilities functions ==========" << std::endl;
+    std::string sequence = "$GCUAAAAGC";
+    int size = sequence.size()-1;
+
+    std::vector<std::pair<int, int>> S = {{1, 9}, {2, 8}, {3, 7}};
 
     std::cout << "  Input Sequence: " << sequence << std::endl;
     std::cout << "  Base-Pairs: ";
@@ -165,46 +286,41 @@ int main() {
         std::cout << "(" << pair.first << ", " << pair.second << ") ";
     }
     std::cout << std::endl;
+    std::cout << "  Size of the sequence (without $): " << size << std::endl;
 
 
-    int size = 11;
-    std::cout << "  Size: " << size << std::endl;
+    std::string structure = bplist2db(S, size);
+    std::cout << "  Secondary structure in dot-bracket representation: " << structure << std::endl; 
 
-    std::string structure = displaySS(S, size);
-    std::cout << "  Secondary structure: " << structure << std::endl; 
-
-    auto [base_pairs, length] = parseSS(structure);
-    std::cout << "  Parsed Base-Pairs: ";
+    auto [base_pairs, length] = db2bplist(structure);
+    std::cout << "  Secondary structure in base pair list: ";
     for (const auto& pair : base_pairs) {
         std::cout << "(" << pair.first << ", " << pair.second << ") ";
     }
-    std::cout << "\n  Length of the string: " << length << std::endl;
+    std::cout << std::endl;
 
 
-    std::cout << "\n Test of the function print_matrix" << std::endl;
+    std::cout << "========== Test of the function print_matrix ==========" << std::endl;
 
 
-    Matrix2D matrix = create_matrix2d({
-        {0,0,0,0,1,1,1,1,2,2,2},
-        {0,0,0,0,0,0,1,1,1,1,1},
-        {0,0,0,0,0,0,0,0,0,1,1},
-        {0,0,0,0,0,0,0,0,0,1,1},
-        {0,0,0,0,0,0,0,0,0,1,1},
-        {0,0,0,0,0,0,0,0,0,1,1},
-        {0,0,0,0,0,0,0,0,0,0,1},
-        {0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0},
+    Matrix2D matrix({
+        {0,0,1,1,1,1,1,2,3},
+        {0,0,0,0,1,1,1,2,2},
+        {0,0,0,0,1,1,1,1,1},
+        {0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0},
     });
 
     print_matrix(matrix,sequence);
 
-
-    std::cout << "\n Test of the function generate_random_sequence" << std::endl;
+    std::cout << "========== Test of the function generate_random_sequence ==========" << std::endl;
     std::cout << "  Random sequence: " << generate_random_sequence(10) << std::endl;
 
-
+    std::cout << "========== End of the utilities test ==========" << std::endl << std::endl;
     return 0;
 }
 #endif //UTILITIES_TEST

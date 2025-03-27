@@ -11,17 +11,15 @@
  * 
  * COMPILATION of this file for testing:
  * Go to the nussinov.ccp and Makefile directory and run the following command in the terminal:
- *
  *     make nussinov
- *
  * Execution:
  * After compilation, run the program with:
- *
  *     ./nussinov.exe
  *
  * Dependencies:
- * - Requires "utilities.hpp" and "global_variables.hpp" for helper functions and global variables.
+ * - Requires "utilities.hpp" and "global_variables.hpp" for helper functions and global variables. The linking is done by the Makefile
  *
+ * 
  * @date 2025-03
  */
 
@@ -160,7 +158,7 @@ int main() {
         std::cout << "(" << pair.first << ", " << pair.second << ") ";
     }
     std::cout << std::endl;
-    std::string dot_bracket_structure = displaySS(S, len_seq);
+    std::string dot_bracket_structure = bplist2db(S, len_seq);
     std::cout << "Secondary structure in dot-bracket representation: " << dot_bracket_structure << std::endl; 
 
     std::cout << "========== End Nussinov test ==========" << std::endl << std::endl;
