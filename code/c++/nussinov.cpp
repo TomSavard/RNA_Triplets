@@ -7,8 +7,9 @@
  * 
  * These FillMatrix and Backtrack functions are also used in the strand soup algorithm.
  * 
- * COMPILATION:
- * To compile the program using Makefile :
+ * 
+ * 
+ * COMPILATION of this file for testing:
  * Go to the nussinov.ccp and Makefile directory and run the following command in the terminal:
  *
  *     make nussinov
