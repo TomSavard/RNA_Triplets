@@ -75,7 +75,7 @@ We use a dynamic programming approach. It is composed of two main functions :
 - `ω` – RNA sequence of length \( n \)  
 
 #### **Output**:
-- `S*` – Structure minimizing free energy  
+- $S^*$ – Structure minimizing free energy  
 
 ```
 Function Backtrack(i, j, m, w):
@@ -153,6 +153,31 @@ Here is the schematic illustration of the dynamic programming scheme for the Str
     ```
     make clean
     ```
+
+---
+
+### Description of the file hierarchy
+
+#### C++ Files
+- **`strand_soup.cpp`**: Implements the Strand Soup Interaction model using a 6D dynamic programming matrix.
+- **`nussinov.cpp`**: Implements the Nussinov algorithm for single RNA strand secondary structure prediction.
+- **`utilities.cpp`**: Contains helper functions for matrix manipulation, RNA sequence generation, and other utilities.
+- **`global_variables.hpp`**: Defines global constants (e.g., `theta`, `pair_energy`) and shared variables used across the C++ implementation.
+- **`Makefile`**: Provides build instructions for compiling the C++ code. Includes targets for `strand_soup`, `nussinov`, and `clean`.
+
+#### Python Files
+- **`main.py`**: Python implementation of the Nussinov algorithm for testing and visualization.
+- **`utilities.py`**: Helper functions for matrix operations and RNA sequence handling in Python.
+- **`global_variables.py`**: Defines global constants for the Python implementation.
+
+---
+
+
+
+
+
+
+
 
 
 
