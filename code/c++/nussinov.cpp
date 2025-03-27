@@ -6,6 +6,20 @@
  * for RNA structure prediction, including matrix filling and backtracking.
  * 
  * These FillMatrix and Backtrack functions are also used in the strand soup algorithm.
+ * 
+ * COMPILATION:
+ * To compile the program using Makefile :
+ * Go to the nussinov.ccp and Makefile directory and run the following command in the terminal:
+ *
+ *     make nussinov
+ *
+ * Execution:
+ * After compilation, run the program with:
+ *
+ *     ./nussinov.exe
+ *
+ * Dependencies:
+ * - Requires "utilities.hpp" and "global_variables.hpp" for helper functions and global variables.
  *
  * @date 2025-03
  */
