@@ -166,7 +166,7 @@ Here is the schematic illustration of the dynamic programming scheme for the Str
 - **`Makefile`**: Provides build instructions for compiling the C++ code. Includes targets for `strand_soup`, `nussinov`, and `clean`.
 
 #### Python Files
-- **`main.py`**: Python implementation of the Nussinov algorithm for testing and visualization.
+- **`main.ipynb`**: Python implementation of the Nussinov algorithm. Contains the functions FillMatrix, Backtrack and some visualisation via viennaRNA.
 - **`utilities.py`**: Helper functions for matrix operations and RNA sequence handling in Python.
 - **`global_variables.py`**: Defines global constants for the Python implementation.
 
