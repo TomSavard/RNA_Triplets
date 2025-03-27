@@ -5,3 +5,4 @@ code/c++/build/*
 !/code/c++/build/Makefile
 *DS_Store
 *__pycache__/
+strand_soup.exe.dSYM/
