@@ -5,7 +5,7 @@
  * This file contains the implementation of the dynamic programming approach 
  * for RNA structure prediction, including matrix filling and backtracking.
  * 
- * These FillMatrix and Backtrack functions are also used in the strand soup algorithm.
+ * The FillMatrix function is also used in the strand soup algorithm. (The backtrack for nussinov is reimplemented inside strand_soup.cpp with an other output format)
  * 
  * 
  * 

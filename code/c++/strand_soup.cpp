@@ -1,3 +1,31 @@
+/**
+ * @file strand_soup.cpp
+ * @brief Implements the strand_soup algorithm for RNA secondary structure prediction.
+ *
+ * This file contains the implementation of the dynamic programming approach 
+ * for RNA structure prediction, including the matrix filling and the backtracking.
+ * 
+ * 
+ * 
+ * COMPILATION of this file for testing:
+ * Go to the strand_soup.ccp directory where the Makefile should also be and run the following command in the terminal:
+ *     make strand_soup
+ * Execution:
+ * After compilation, run the program with:
+ *     ./strand_soup.exe
+ *
+ * Dependencies:
+ * "global_variables.hpp" for global variables.
+ * "nussinov.hpp" for the Nussinov algorithm.
+ * "utilities.hpp" for helper functions.
+ * 
+ * The linking is done by the Makefile
+ *
+ * 
+ * @date 2025-03
+ */
+
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -19,8 +47,25 @@
 
 
 
+/**
+ * @class Matrix6D
+ * @brief A class representing a 6D matrix used in RNA folding calculations.
+ * 
+ * This class handles a 6-dimensional matrix with specific sizes for each dimension. The matrix is used 
+ * to store various data related to RNA folding, such as energy values and structural information.
+ */
 class Matrix6D{
     public:
+    /**
+     * @brief Constructor that initializes a 6D matrix with specified sizes.
+     * 
+     * @param m_size Size of the first dimension. Strand count in the soup -2 (the strands s and r are not counted)
+     * @param s_size Size of the second dimension : Strand type count (1-based)
+     * @param i_size Size of the third dimension : Nucleotide count in the first strand (1-based)
+     * @param r_size Size of the fourth dimension : Strand type count (1-based)
+     * @param j_size Size of the fifth dimension : Nucleotide count in the second strand (1-based)
+     * @param c_size Size of the sixth dimension = 2  : Connectivity bit (0 or 1).
+     */
     Matrix6D(int m_size, int s_size, int i_size, int r_size, int j_size, int c_size)
         : m_size(m_size), s_size(s_size), i_size(i_size), r_size(r_size), j_size(j_size), c_size(c_size) {
         data = std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<float>>>>>>(
@@ -31,7 +76,20 @@ class Matrix6D{
             j_size + 2, std::vector<float>( //! we add one column before and after for border effect
             c_size, 0))))));
     }
-    // Method to access the elements of the matrix.
+
+    /**
+     * @brief Accessor method for the matrix elements.
+     * 
+     * @param m Index of the first dimension
+     * @param s Index of the second dimension
+     * @param i Index of the third dimension
+     * @param r Index of the fourth dimension
+     * @param j Index of the fifth dimension
+     * @param c Index of the sixth dimension
+     * @return Reference to the element in the matrix
+     * 
+     * Throws an out_of_range exception if indices are out of bounds.
+     */
     float& operator()(int m, int s, int i, int r, int j, int c) {
         if (s <= 0 || s > s_size) {
             throw std::out_of_range("Index s is out of range");
@@ -45,14 +103,14 @@ class Matrix6D{
         if (j < 0 || j >= j_size + 2) {
             throw std::out_of_range("Index j is out of range");
         }
-        return data[m][s-1][i][r-1][j][c]; // 1-based indexing for the strands and the bases. (The 0th column is for the border effect)
+        return data[m][s-1][i][r-1][j][c]; // 1-based indexing for strands and bases
     }
 
     int get_m_size() const { return m_size; }
     int get_s_size() const { return s_size; }
-    int get_i_size() const { return i_size; }
+    int get_i_size() const { return i_size; } // i_size is the real number of bases in the strand (It's the size of the 3rd dimension -2)
     int get_r_size() const { return r_size; }
-    int get_j_size() const { return j_size; }
+    int get_j_size() const { return j_size; } // j_size is the real number of bases in the strand (It's the size of the 5th dimension -2)
     int get_c_size() const { return c_size; }
 
 private:
@@ -63,28 +121,51 @@ private:
 
 
 
-
+/**
+ * @class output_backtrack
+ * @brief Class to manage the backtracking output from RNA folding calculations of the strand_soup algorithm.
+ * 
+ */
 class output_backtrack{
-    /**
-     * @brief Class to handle the output of the backtracking
-     * 
-     * Detailled description : TO BE DONE
-     * 
-     * @param list_of_sequences : the list of sequences
-     * @param list_of_pairs : the list of pairs (x,i,y,j) with x the index of the first strand, i the index of the first nucleotide within x, y the index of the second strand and j the index of the second nucleotide within y.
-     * 
-     * 
-     */
+
     public:
+    /**
+     * @brief Add a sequence to the end of the list of sequences.
+     * 
+     * @param sequence The sequence to be added.
+     */
     void add_sequence(int sequence){
         list_of_sequences.push_back(sequence);
     }
+
+    /**
+     * @brief Add a sequence to the front of the list  of sequences.
+     * 
+     * @param sequence The sequence to be added at the front.
+     */
     void add_sequence_front(int sequence){
         list_of_sequences.insert(list_of_sequences.begin(),sequence);
     }
+
+    /**
+     * @brief Add a pair of nucleotides to the output.
+     * 
+     * @param x Index of the first strand
+     * @param i Index of the first nucleotide in strand x
+     * @param y Index of the second strand
+     * @param j Index of the second nucleotide in strand y
+     */
     void add_pair(int x, int i, int y, int j){
         list_of_pairs.push_back({x,i,y,j});
     }
+
+    /**
+     * @brief Shift the indices of the pairs by a given value.
+     * 
+     * This function is usefull when backtracking the output of a subproblem.
+     * 
+     * @param shift The value by which to shift the indices.
+     */
     void shift(int shift){
         for (int i=0; i<int(list_of_pairs.size()); i++){
             list_of_pairs[i][0] += shift;
@@ -92,14 +173,22 @@ class output_backtrack{
         }
     }
 
-    void merge(const output_backtrack& sub_output, int shift){// we merge the output of the sub_output with the current output. The merge is done on the right. [upper_output, sub_output_shifted]
+    /**
+     * @brief Merge the current output with another output.
+     * 
+     * @param sub_output The output of the sub-problem to be merged.
+     */
+    void merge(const output_backtrack& sub_output){
         for (const auto& seq : sub_output.list_of_sequences){
-            list_of_sequences.push_back(seq + shift);
+            list_of_sequences.push_back(seq);
         }
         for (const auto& pair : sub_output.list_of_pairs){
-            list_of_pairs.push_back({pair[0] + shift, pair[1], pair[2] + shift, pair[3]});
+            list_of_pairs.push_back({pair[0], pair[1], pair[2], pair[3]});
         }}
 
+    /**
+     * @brief Print the sequences and pairs in the output.
+     */
     void print() const{
         std::cout << "Ordered list of sequences: ";
         for (const auto& seq : list_of_sequences){
@@ -125,33 +214,28 @@ class output_backtrack{
 
 
 
-
-
 //======================================    Energy matrix functions    ==============================================//
 
 
 
 
-
-float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M,  std::unordered_map<std::string, Matrix2D> Nussinov_matrices){
-    /**
-     * @brief Computes the minimum energy for the general case.
-     * 
-     * Detailled description : TO BE DONE
-     * 
-     * @param m : the number of remaining strands in the soup
-     * @param s : the index of the starting strand (1-based)
-     * @param i : the index of the starting nucleotide of the first strand (1-based
-     * @param r : the index of the ending strand (1-based)
-     * @param j : the index of the ending nucleotide of the last second strand (1-based)
-     * @param c : the connectivity bit
-     * @param strands : the dictionary of strands (int = index, string = sequence)
-     * @param M : the energy_matrix
-     * 
-     * @return float : the minimum energy
-     */
-
-    //! we have added a column at the end of i and at the begining of j. We have to shift the indices of j by -1 when accessible the bases of the strands (no pb because if j==0, the function isn't called)
+/**
+ * @brief Handles the bubble case of the RNA strand soup problem.
+ * 
+ * This function computes the minimum energy for a bubble case in the RNA strand soup problem. It considers the 4 cases and returns the minimum energy.
+ * 
+ * @param m The number of strands remaining in the soup.
+ * @param s The index of the starting strand. (1-based)
+ * @param i The index of the starting nucleotide in strand s. (1-based)
+ * @param r The index of the ending strand. (1-based)
+ * @param j The index of the ending nucleotide in strand r. (1-based)
+ * @param c The connectivity bit.
+ * @param strands A dictionary of strands (index, sequence).
+ * @param M The energy matrix.
+ * @param nussinov_matrices A dictionary of Nussinov matrices.
+ * @return float The minimum energy.
+ */
+float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M,  std::unordered_map<std::string, Matrix2D> nussinov_matrices){
     float min_value = inf_energy;
 
     // Case 1 : i is left unpaired
@@ -160,13 +244,12 @@ float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::un
     // Case 2 : i is paired to k of strand s
     for (int k=i+1; k<=int(strands.at(s).length())-1; k++){
         if (can_pair(strands.at(s)[i],strands.at(s)[k])){
-            float value = pair_energy + Nussinov_matrices[strands.at(s)](i+1,k-1) + M(m,s,k+1,r,j,c);
+            float value = pair_energy + nussinov_matrices[strands.at(s)](i+1,k-1) + M(m,s,k+1,r,j,c);
             if (value < min_value){
                 min_value = value;
                 // std::cout << "CASE2 with k = " << k << std::endl;
             }
         }
-
     }
 
     // Case 3 : i is paired to k of new strand t
@@ -188,7 +271,6 @@ float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::un
     }
 
     // Case 4 : i is paired to k of strand r
-
     for (int k=1; k<=j; k++){
         if (can_pair(strands.at(s)[i],strands.at(r)[k])){
             if (k == int(strands.at(r).length()-1)){
@@ -198,7 +280,7 @@ float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::un
                     min_value = value;
                 }}
             else {
-                float value = pair_energy + M(m,s,i+1,r,k-1,0) + Nussinov_matrices[strands.at(r)](k+1,j);
+                float value = pair_energy + M(m,s,i+1,r,k-1,0) + nussinov_matrices[strands.at(r)](k+1,j);
                 if (value < min_value){min_value = value;
                     // std::cout << "CASE4 with k = " << k << std::endl;
                 }}
@@ -212,23 +294,15 @@ float GeneralCaseMinimization (int m, int s, int i, int r, int j, int c, std::un
 
 
 
-
-void MainAuxiliaryMatrix(std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> Nussinov_matrices){
-    /**
-     * @brief Computes the 6D matrix of the strand soup.
-     * 
-     * Detailled description : Sebastian Will suggested the idea of only computing the "square" 6D matrix and replacing the first one by a function with a disjunction of cases.
-     * 
-     * @param starting_strand : index of the first strand inside strands
-     * @param final_strand : index of the second strand inside strands
-     * @param strands : the dictionary of strands (int = index, string = sequence)
-     * @param M : the main matrix to fill
-     * 
-     * @return void
-     */
-
+/**
+ * @brief Computes the 6D matrix for the RNA strand soup problem
+ * 
+ * @param strands The dictionary of strands (index, sequence).
+ * @param M The main matrix to be filled.
+ * @param nussinov_matrices A dictionary of the nussinov matrices.
+ */
+void MainAuxiliaryMatrix(std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> nussinov_matrices){
     std::cout << "MainAuxiliaryMatrix" << std::endl;
-
     // ================== Lexicographic Order (m,s,-i,r,j,c) ================== //
     for (int m=0; m<M.get_m_size(); m++){
         for (int s=1; s<= M.get_s_size(); s++){
@@ -238,7 +312,7 @@ void MainAuxiliaryMatrix(std::unordered_map<int, std::string> strands, Matrix6D&
                         for (int c=0; c<=1; c++){
                             // std::cout << "M(" << m << "," << s << "," << i << "," << r << "," << j << "," << c << ")" << std::endl;
                             if (i > int(strands.at(s).length()-1)){ //! this is the case where the strand s is empty (border effect). Be careful the strands.length must be decreased by one because of the $ sign at the beginning of the strands!
-                                // std::cout << "CASE A" << std::endl;
+                                // std::cout << "CASE s empty" << std::endl;
                                 if(c==1){
                                     M(m,s,i,r,j,c) = inf_energy;}
                                 else{
@@ -247,7 +321,7 @@ void MainAuxiliaryMatrix(std::unordered_map<int, std::string> strands, Matrix6D&
                                             M(m,s,i,r,j,c) = 0;} //additional condition in case both are empty
                                         else {
                                             // std::cout << "Nussinov  " << strands.at(r) << " " << 0 << " " << j;
-                                            M(m,s,i,r,j,c) = Nussinov_matrices[strands.at(r)](1,j);}
+                                            M(m,s,i,r,j,c) = nussinov_matrices[strands.at(r)](1,j);}
                                     }
                                     else{// we select the min M[m-1][t][0][r][j][1] over all t
                                         float min_value = inf_energy;
@@ -258,7 +332,7 @@ void MainAuxiliaryMatrix(std::unordered_map<int, std::string> strands, Matrix6D&
                                 }
                             }
                             else{
-                                // std::cout << "CASE B" << std::endl;
+                                // std::cout << "CASE r empty" << std::endl;
                                 if (j<1){//if r is empty
                                     if (c==1){
                                         M(m,s,i,r,j,c) = inf_energy;}
@@ -267,7 +341,7 @@ void MainAuxiliaryMatrix(std::unordered_map<int, std::string> strands, Matrix6D&
                                             if (i ==0){
                                                 M(m,s,i,r,j,c) = 0;}
                                             else{
-                                                M(m,s,i,r,j,c) = Nussinov_matrices[strands.at(s)](i,strands.at(s).length()-1);}
+                                                M(m,s,i,r,j,c) = nussinov_matrices[strands.at(s)](i,strands.at(s).length()-1);}
                                             }
                                         else{// we select the min M[m-1][s][i][t][size(t)-1][1] over all t
                                             float min_value = inf_energy;
@@ -279,11 +353,11 @@ void MainAuxiliaryMatrix(std::unordered_map<int, std::string> strands, Matrix6D&
                                 }
                                 else {
                                     // std::cout << "CASE GENERAL" << std::endl;
-                                    M(m,s,i,r,j,c) = GeneralCaseMinimization(m,s,i,r,j,c,strands,M,Nussinov_matrices);
+                                    M(m,s,i,r,j,c) = GeneralCaseMinimization(m,s,i,r,j,c,strands,M,nussinov_matrices);
                                 }
                                 
                             }
-                            //just displaying the values woth colors (red for borders, green for acceptable values (c==1), white for the rest)
+                            //Displaying the values of the matrix with colors (red for borders, green for acceptable values (c==1), white for the rest)
                             if (i == 0 || j== 0 || i == M.get_i_size() + 1 || j == M.get_j_size() + 1){
                                 std::cout << RED << "M(" << m << "," << s << "," << i << "," << r << "," << j << "," << c << ") = " << M(m,s,i,r,j,c) << RESET << std::endl;
                             }
@@ -302,21 +376,21 @@ void MainAuxiliaryMatrix(std::unordered_map<int, std::string> strands, Matrix6D&
 
  
 
+
 //======================================    Backtrack functions    ==============================================//
 
 
 
-
+/**
+ * @brief Finds the starting point in the energy matrix, which corresponds to the minimum energy (excluding the border effect).
+ * 
+ * This function searches through the filled energy matrix (M) and identifies the minimum energy value. It returns the coordinates (m,s,i,r,j,c) of the minimum energy, excluding the borders.
+ * 
+ * @param M The 6D energy matrix that stores the computed energy values for all possible configurations.
+ * 
+ * @return std::vector<int> The starting point (m,s,i,r,j,c) where the minimum energy is located.
+ */
 std::vector<int> Find_start_backtrack(Matrix6D& M){
-    /**
-     * @brief finds the starting point ==> min of the filled energy matrix (apart from the border effect)
-     * 
-     * Detailled description : TO BE DONE
-     * 
-     * @param M : the 6D matrix
-     * 
-     * @return std::vector<int> : the starting point (m,s,i,r,j,c)
-     */
     std::vector<int> starting_point(6,-1);
     float min_value = inf_energy;
 
@@ -338,56 +412,57 @@ std::vector<int> Find_start_backtrack(Matrix6D& M){
 
 
 
-output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> Nussinov_matrices);
+output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> nussinov_matrices);
 
 
 
 
-
-output_backtrack nussinov_backtrack(int s, int i, int j,std::unordered_map<int, std::string> strands, std::unordered_map<std::string, Matrix2D> Nussinov_matrices){
-    /**
-     * @brief Backtrack the minimum energy matrix to find the secondary structure using the Nussinov algorithm.
-     * 
-     * Detailled description : TO BE DONE //! we could provide the specific strand and energy matrix instead of everything. It could save space.
-     * 
-     * @param s : the index of the strand
-     * @param i : the first index of the subsequence 
-     * @param j : the last index of the subsequence
-     * @param strands : the dictionary of strands (int = index, string = sequence)
-     * @param Nussinov_matrices : the dictionary of Nussinov matrices (string = sequence, Matrix2D = energy matrix)
-     * @param theta : the minimum distance between paired bases 
-     * 
-     * @return output_backtrack : the secondary structure
-     */
-    // std::cout << "Nussinov backtrack" << std::endl;
-    if (j-i < theta){
+/**
+ * @brief Backtrack the minimum energy matrix of a single strand to find its secondary structure using the Nussinov algorithm (1D case).
+ * 
+ * This function recursively backtracks through the Nussinov matrix to find the optimal secondary structure of each single RNA strand.
+ * 
+ * @param s : the index of the strand
+ * @param i : the first index of the subsequence 
+ * @param j : the last index of the subsequence
+ * @param strands : the dictionary of strands (int = index, string = sequence)
+ * @param nussinov_matrices : the dictionary of Nussinov matrices (string = sequence, Matrix2D = energy matrix)
+ * @param theta : the minimum distance between paired bases 
+ * 
+ * @return output_backtrack : the secondary structure
+ */
+output_backtrack nussinov_backtrack(int s, int i, int j,std::unordered_map<int, std::string> strands, std::unordered_map<std::string, Matrix2D> nussinov_matrices){
+    // The cases are ordered according to the Fig7 of the paper AlMoB_submittedVersion.pdf (Schematic illustration of the dynamic programming scheme for the Strand Soup Interaction model )
+    if (j-i < theta){ // Base case: return an empty structure if subsequence length is below the threshold.
         return output_backtrack();
     }
     else {
-        // Case A : pos i without partner
-        if (Nussinov_matrices[strands.at(s)](i,j) == Nussinov_matrices[strands.at(s)](i+1,j)){
-            return nussinov_backtrack(s,i+1,j,strands,Nussinov_matrices);
+        // Case A: Position i remains unpaired
+        if (nussinov_matrices[strands.at(s)](i,j) == nussinov_matrices[strands.at(s)](i+1,j)){
+            return nussinov_backtrack(s,i+1,j,strands,nussinov_matrices);
         }
-        // Case B : pos i paired with j
-        else if (Nussinov_matrices[strands.at(s)](i,j) == Nussinov_matrices[strands.at(s)](i+1,j-1) + pair_energy && can_pair(strands.at(s)[i],strands.at(s)[j])){
-            output_backtrack output = nussinov_backtrack(s,i+1,j-1,strands,Nussinov_matrices);
+
+        // Case B: Position i pairs with j
+        else if (nussinov_matrices[strands.at(s)](i,j) == nussinov_matrices[strands.at(s)](i+1,j-1) + pair_energy && can_pair(strands.at(s)[i],strands.at(s)[j])){
+            output_backtrack output = nussinov_backtrack(s,i+1,j-1,strands,nussinov_matrices);
             output.add_pair(1,i,1,j);
             return output;
         }
-        // Case C : pairing with another base at index k
+
+        // Case C: Position i pairs with some k (i < k < j)
         else {
             for (int k=i+theta+1; k<j; k++){
-                if (Nussinov_matrices[strands.at(s)](i,j) == Nussinov_matrices[strands.at(s)](i+1,k-1) + Nussinov_matrices[strands.at(s)](k+1,j) + pair_energy && can_pair(strands.at(s)[i],strands.at(s)[k])){
-                    output_backtrack output1 = nussinov_backtrack(s,i+1,k-1,strands,Nussinov_matrices);
-                    output_backtrack output2 = nussinov_backtrack(s,k+1,j,strands,Nussinov_matrices);
-                    output1.merge(output2,0);
+                if (nussinov_matrices[strands.at(s)](i,j) == nussinov_matrices[strands.at(s)](i+1,k-1) + nussinov_matrices[strands.at(s)](k+1,j) + pair_energy && can_pair(strands.at(s)[i],strands.at(s)[k])){
+                    output_backtrack output1 = nussinov_backtrack(s,i+1,k-1,strands,nussinov_matrices);
+                    output_backtrack output2 = nussinov_backtrack(s,k+1,j,strands,nussinov_matrices);
+                    output1.merge(output2);
                     output1.add_pair(1,i,1,k);
                     return output1;
                 }
             }
         }
     }
-    std::cout << "ERROR : Unexpected behaviour in nussinov_backtrack" << std::endl;
+    std::cout << "ERROR : Unexpected behaviour in nussinov_backtrack" << std::endl; //The cases A,B and C should cover all the possibilities. The function should never reach this point.
     return output_backtrack();
 }
 
@@ -395,50 +470,47 @@ output_backtrack nussinov_backtrack(int s, int i, int j,std::unordered_map<int, 
 
 
 
-
-output_backtrack bubble_backtrack(int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> Nussinov_matrices){
-    /**
-     * @brief Backtrack the bubble case.
-     * 
-     * Detailled description : TO BE DONE
-     * 
-     * @param m : the number of remaining strands in the soup
-     * @param s : the index of the starting strand (1-based)
-     * @param i : the index of the starting nucleotide of the first strand (1-based)
-     * @param r : the index of the ending strand (1-based)
-     * @param j : the index of the ending nucleotide of the last second strand (1-based)
-     * @param c : the connectivity bit
-     * @param strands : the dictionary of strands (int = index, string = sequence)
-     * @param M : the energy_matrix
-     * @param Nussinov_matrices : the dictionary of Nussinov matrices (string = sequence, Matrix2D = energy matrix)
-     * 
-     * @return output_backtrack : the secondary structure
-     */
-
-    // We have to backtrack the 6D matrix to find the optimal secondary structure
+/**
+ * @brief Backtracks the bubble case.
+ * 
+ * This function recursively backtracks through the 6D matrix to find the optimal secondary structure for the bubble case. It considers the 4 cases and makes recursive calls via square_backtrack and nussinov_backtrack functions.
+ * 
+ * @param m : the number of remaining strands in the soup
+ * @param s : the index of the starting strand (1-based)
+ * @param i : the index of the starting nucleotide of the first strand (1-based)
+ * @param r : the index of the ending strand (1-based)
+ * @param j : the index of the ending nucleotide of the last second strand (1-based)
+ * @param c : the connectivity bit
+ * @param strands : the dictionary of strands (int = index, string = sequence)
+ * @param M : the energy_matrix
+ * @param nussinov_matrices : the dictionary of Nussinov matrices (string = sequence, Matrix2D = energy matrix)
+ * 
+ * @return output_backtrack : the secondary structure
+ */
+output_backtrack bubble_backtrack(int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> nussinov_matrices){
     // We go from the top to the bottom of the matrix according to the lexico order (m,s,i,r,j,c)
 
     //CASE 1 : i is left unpaired
     if (M(m,s,i,r,j,c) == M(m,s,i+1,r,j,c)){
         // std::cout << "CASE1" << std::endl;
-        return bubble_backtrack(m,s,i+1,r,j,c,strands,M,Nussinov_matrices);
+        return square_backtrack(m,s,i+1,r,j,c,strands,M,nussinov_matrices);
     }
 
-    //CASE 2: i is paired to k of strand s
+    //CASE 2: i is paired to base k of strand s
     for (int k=i+1; k <=int(strands.at(s).length())-1;k++){
         if (can_pair(strands.at(s)[i],strands.at(s)[k])){
-            if (M(m,s,i,r,j,c) == pair_energy + Nussinov_matrices[strands.at(s)](i+1,k-1) + M(m,s,k+1,r,j,c)){
+            if (M(m,s,i,r,j,c) == pair_energy + nussinov_matrices[strands.at(s)](i+1,k-1) + M(m,s,k+1,r,j,c)){
                 // std::cout << "CASE2" << std::endl;
-                output_backtrack output1 = nussinov_backtrack(s,i+1,k-1,strands,Nussinov_matrices);
+                output_backtrack output1 = nussinov_backtrack(s,i+1,k-1,strands,nussinov_matrices);
                 output1.add_pair(1,i,1,k); // we add the pair between i and k of strand s 
-                output_backtrack output2 = square_backtrack(m,s,k+1,r,j,c,strands,M,Nussinov_matrices);
-                output1.merge(output2,0);
+                output_backtrack output2 = square_backtrack(m,s,k+1,r,j,c,strands,M,nussinov_matrices);
+                output1.merge(output2);
                 return output1;
             }
         }
     }
 
-    //CASE 3: i is paired to k of new strand t
+    //CASE 3: i is paired to base k of new strand t
     if (m>=1){
         for (int t=1; t<=M.get_s_size(); t++){
             for (int m1=0; m1<m; m1++){
@@ -446,12 +518,12 @@ output_backtrack bubble_backtrack(int m, int s, int i, int r, int j, int c, std:
                 for (int k=1; k<=int(strands.at(t).length())-1;k++){
                     if (can_pair(strands.at(s)[i],strands.at(t)[k])){
                         if (M(m,s,i,r,j,c) == pair_energy + M(m1,s,i+1,t,k-1,0) + M(m2,t,k+1,r,j,c)){
-                            output_backtrack output1 = square_backtrack(m1,s,i+1,t,k-1,0,strands,M,Nussinov_matrices);
+                            output_backtrack output1 = square_backtrack(m1,s,i+1,t,k-1,0,strands,M,nussinov_matrices);
                             output1.add_pair(1,i,1+m1+1,k);
                             output1.add_sequence(t);
-                            output_backtrack output2 = square_backtrack(m2,t,k+1,r,j,c,strands,M,Nussinov_matrices); // there is a problem here
+                            output_backtrack output2 = square_backtrack(m2,t,k+1,r,j,c,strands,M,nussinov_matrices); // there is a problem here
                             output2.shift(1+m1);
-                            output1.merge(output2,0);
+                            output1.merge(output2);
                             return output1;
                         }
                     }
@@ -460,24 +532,24 @@ output_backtrack bubble_backtrack(int m, int s, int i, int r, int j, int c, std:
         }
     }
 
-    //CASE 4: i is paired to k of strand r
+    //CASE 4: i is paired to base k of strand r
     for (int k=1; k<=j;k++){
         if (can_pair(strands.at(s)[i],strands.at(r)[k])){
             if (k == int(strands.at(r).length()-1)){
                 if (M(m,s,i,r,j,c) == pair_energy + M(m,s,i+1,r,k-1,0)){
                     // std::cout << "CASE4.1" << std::endl;
-                    output_backtrack output = square_backtrack(m,s,i+1,r,k-1,0,strands,M,Nussinov_matrices);
+                    output_backtrack output = square_backtrack(m,s,i+1,r,k-1,0,strands,M,nussinov_matrices);
                     output.add_pair(1,i,1+m+1,k);
                     return output;
                 }
             }
             else{
-                if (M(m,s,i,r,j,c) == pair_energy + M(m,s,i+1,r,k-1,0) + Nussinov_matrices[strands.at(r)](k+1,j)){
+                if (M(m,s,i,r,j,c) == pair_energy + M(m,s,i+1,r,k-1,0) + nussinov_matrices[strands.at(r)](k+1,j)){
                     // std::cout << "CASE4.2" << std::endl;
-                    output_backtrack output1 = square_backtrack(m,s,i+1,r,k-1,0,strands,M,Nussinov_matrices);
+                    output_backtrack output1 = square_backtrack(m,s,i+1,r,k-1,0,strands,M,nussinov_matrices);
                     output1.add_pair(1,i,1+m+1,k);
-                    output_backtrack output2 = nussinov_backtrack(r,k+1,j,strands,Nussinov_matrices);
-                    output1.merge(output2,0);
+                    output_backtrack output2 = nussinov_backtrack(r,k+1,j,strands,nussinov_matrices);
+                    output1.merge(output2);
                     return output1;
                 }
             }
@@ -488,41 +560,37 @@ output_backtrack bubble_backtrack(int m, int s, int i, int r, int j, int c, std:
 }
 
 
-output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> Nussinov_matrices){
-    /**
-     * @brief Backtrack the square case.
-     * 
-     * Detailled description : TO BE DONE
-     * 
-     * @param m : the number of remaining strands in the soup
-     * @param s : the index of the starting strand (1-based)
-     * @param i : the index of the starting nucleotide of the first strand (1-based)
-     * @param r : the index of the ending strand (1-based)
-     * @param j : the index of the ending nucleotide of the last second strand (1-based)
-     * @param c : the connectivity bit
-     * @param strands : the dictionary of strands (int = index, string = sequence)
-     * @param M : the energy_matrix
-     * @param Nussinov_matrices : the dictionary of Nussinov matrices (string = sequence, Matrix2D = energy matrix)
-     * 
-     * @return return 
-     */
-
-    // We have to backtrack the 6D matrix to find the optimal secondary structure
-    // We go from the top to the bottom of the matrix according to the lexico order (m,s,i,r,j,c)
-
-
-    if (i>int(strands.at(s).length()-1)){
+/**
+ * @brief Backtracks the square case of the RNA strand soup problem.
+ * 
+ * This function recursively backtracks through the 6D matrix to find the optimal secondary structure for the square case. It considers the cases where the first strand is empty or the second strand is empty and makes recursive calls via bubble_backtrack, square_backtrack or nussinov_backtrack functions.
+ * 
+ * @param m : the number of remaining strands in the soup
+ * @param s : the index of the starting strand (1-based)
+ * @param i : the index of the starting nucleotide of the first strand (1-based)
+ * @param r : the index of the ending strand (1-based)
+ * @param j : the index of the ending nucleotide of the last second strand (1-based)
+ * @param c : the connectivity bit
+ * @param strands : the dictionary of strands (int = index, string = sequence)
+ * @param M : the energy_matrix
+ * @param nussinov_matrices : the dictionary of Nussinov matrices (string = sequence, Matrix2D = energy matrix)
+ * 
+ * @return output_backtrack : the secondary structure
+ */
+output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> nussinov_matrices){
+    // The cases are ordered according to the Fig7 of the paper AlMoB_submittedVersion.pdf (Schematic illustration of the dynamic programming scheme for the Strand Soup Interaction model )
+    if (i>int(strands.at(s).length()-1)){ //! this is the case where the strand s is empty (border effect). Be careful the strands.length must be decreased by one because of the $ sign at the beginning of the strands!
         if (c==1){
-            return output_backtrack(); //nothing
+            return output_backtrack(); 
         }
         else {
             if (m==0){
-                return nussinov_backtrack(r,1,j,strands,Nussinov_matrices);
+                return nussinov_backtrack(r,1,j,strands,nussinov_matrices);
             }
             else {
                 for (int t=1; t<=M.get_s_size();t++){
                     if (M(m,s,i,r,j,c) == M(m-1,t,1,r,j,1)){
-                        output_backtrack output = square_backtrack(m-1,t,1,r,j,1,strands,M,Nussinov_matrices);
+                        output_backtrack output = square_backtrack(m-1,t,1,r,j,1,strands,M,nussinov_matrices);
                         output.add_sequence(t);
                         output.shift(1);
                         return output;
@@ -532,18 +600,18 @@ output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std:
         }
     }
     else {
-        if (j<1){
+        if (j<1){ //if r is empty (1-based)
             if (c==1){
-                return output_backtrack(); //nothing
+                return output_backtrack();
             }
             else {
                 if (m==0){
-                    return nussinov_backtrack(s,i,strands.at(s).length()-1,strands,Nussinov_matrices);
+                    return nussinov_backtrack(s,i,strands.at(s).length()-1,strands,nussinov_matrices);
                     }
                 else {
                     for (int t=1; t<=M.get_s_size();t++){
                         if (M(m,s,i,r,j,c) == M(m-1,s,i,t,strands.at(t).length()-1,1)){
-                            output_backtrack output = square_backtrack(m-1,s,i,t,strands.at(t).length()-1,1,strands,M,Nussinov_matrices);
+                            output_backtrack output = square_backtrack(m-1,s,i,t,strands.at(t).length()-1,1,strands,M,nussinov_matrices);
                             output.add_sequence(t);
                             return output;
                         }
@@ -552,7 +620,7 @@ output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std:
             }
         }
         else{
-            return bubble_backtrack(m,s,i,r,j,c,strands,M,Nussinov_matrices);
+            return bubble_backtrack(m,s,i,r,j,c,strands,M,nussinov_matrices);
         }
     }
     std::cout << "ERROR : Unexpected behaviour in square_backtrack" << std::endl;
@@ -560,19 +628,20 @@ output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std:
 }
 
 
-
-void full_backtrack( std::unordered_map<int, std::string> strands, Matrix6D& M, std::unordered_map<std::string, Matrix2D> Nussinov_matrices){
-    /**
-     * @brief Backtrack the 6D matrix to find the optimal secondary structure.
-     * 
-     * Detailled description : TO BE DONE
-     * 
-     * @param strands : the dictionary of strands (int = index, string = sequence)
-     * @param M : the energy_matrix
-     * @param Nussinov_matrices : the dictionary of Nussinov matrices (string = sequence, Matrix2D = energy matrix)
-     * 
-     * @return void
-     */
+/**
+ * @brief Backtracks the 6D matrix to find the optimal secondary structure.
+ * 
+ * This function determines the starting point in the energy matrix and then calls the `square_backtrack` function to reconstruct the optimal secondary structure for the strand_soup problem.
+ * 
+ * @param strands A dictionary mapping strand indices (int) to their RNA sequences (std::string). [Input]
+ * @param M The 6D energy matrix containing computed energy values. [Input]
+ * @param nussinov_matrices A dictionary mapping RNA sequences (std::string) to their precomputed 2D Nussinov energy matrices (Matrix2D). [Input]
+ * 
+ * @throws std::runtime_error If the starting point cannot be determined.
+ * 
+ * @return void
+ */
+void full_backtrack(const std::unordered_map<int, std::string> strands, Matrix6D& M, const std::unordered_map<std::string, Matrix2D> nussinov_matrices){
 
     std::vector<int> starting_point;
     try{
@@ -582,11 +651,22 @@ void full_backtrack( std::unordered_map<int, std::string> strands, Matrix6D& M, 
         std::cerr << e.what() << std::endl;
         exit(EXIT_FAILURE);
     }
-    std::cout << "Starting point : M(" << starting_point[0] << "," << starting_point[1] << "," << starting_point[2] << "," << starting_point[3] << "," << starting_point[4] << "," << starting_point[5] << ") = " << M(starting_point[0], starting_point[1], starting_point[2], starting_point[3], starting_point[4], starting_point[5]) << std::endl;
-    output_backtrack secondary_structure = square_backtrack(starting_point[0],starting_point[1],starting_point[2],starting_point[3],starting_point[4],starting_point[5],strands,M,Nussinov_matrices);
-    secondary_structure.add_sequence(starting_point[3]);
-    secondary_structure.add_sequence_front(starting_point[1]);
-    secondary_structure.print();
+    std::cout << "Starting point: M(" 
+    << starting_point[0] << "," << starting_point[1] << "," 
+    << starting_point[2] << "," << starting_point[3] << "," 
+    << starting_point[4] << "," << starting_point[5] << ") = " 
+    << M(starting_point[0], starting_point[1], starting_point[2], 
+         starting_point[3], starting_point[4], starting_point[5]) 
+    << std::endl;
+
+    output_backtrack secondary_structure = square_backtrack(
+        starting_point[0], starting_point[1], starting_point[2], 
+        starting_point[3], starting_point[4], starting_point[5], 
+        strands, M, nussinov_matrices);
+
+    secondary_structure.add_sequence(starting_point[3]); // we need to add the starting strand
+    secondary_structure.add_sequence_front(starting_point[1]); // and the ending strand
+    secondary_structure.print(); 
 }
 
 
@@ -606,7 +686,6 @@ int main() {
     std::cout << "\n==================== Strand Soup ====================" << std::endl;
     srand(time(0)); // Initialiser le générateur de nombres aléatoires
 
-    //============= Setting the parameters =============//
     std::cout << "\n========== Setting the parameters ==========" << std::endl;
     int m_start = 3; // Number of sequences to generate
     int sequence_length = 7; // length of the sequences
@@ -616,12 +695,8 @@ int main() {
     std::cout << "  Pair energy : " << pair_energy << std::endl;
 
 
-    //============= Generation of the strands =============//
     std::cout << "\n========== Generation of the strands ==========" << std::endl;
     std::unordered_map<int, std::string> strands;
-    // for (int i =0; i < m ; i++){
-    //     strands[i] = generate_random_sequence(sequence_length);
-    // }
     strands[1] = "$AAAAAAC";
     strands[2] = "$GGGGGGU";
     strands[3] = "$AUUUUUU";
@@ -633,23 +708,19 @@ int main() {
     }
 
 
-
-    //============= Nussinov matrices =============//
     std::cout << "\n========== Nussinov matrices ==========" << std::endl;
-    std::unordered_map<std::string, Matrix2D> Nussinov_matrices;
+    std::unordered_map<std::string, Matrix2D> nussinov_matrices;
     for (const auto& pair : strands) {
         const auto& seq = pair.second;
         std::cout << "  Energy matrix for sequence : " << seq << std::endl;
         Matrix2D energy_matrix(sequence_length, sequence_length);
         FillMatrix(seq, energy_matrix);
-        Nussinov_matrices[seq] = energy_matrix;
+        nussinov_matrices[seq] = energy_matrix;
         print_matrix(energy_matrix,seq);
         std::cout << std::endl;
     }
 
 
-
-    //============= Test of the 6D matrix =============//
     std::cout << "========== Test of the 6D matrix ==========" << std::endl;
     int m_size = m_start - 1 ; // Total number of dimensions for m (if we have 2 strands we only have the case m = 0 which is m_size = 1)
     int s_size = m_start; // Total number of different strands
@@ -659,26 +730,10 @@ int main() {
     int c_size = 2; // Connectivité : 0 ou 1
     Matrix6D M(m_size, s_size, i_size, r_size, j_size, c_size);
 
-    // // print the empty matrix
-    // for (int m = 0; m < m_size; m++){
-    //     for (int s = 1; s <= s_size; s++){
-    //         for (int i = i_size+1; i >=0; i--){
-    //             for (int r = 1; r <= r_size; r++){
-    //                 for (int j = 0; j <= j_size+1; j++){
-    //                     for (int c = 0; c <= 1; c++){
-    //                         std::cout << "M(" << m << "," << s << "," << i << "," << r << "," << j << "," << c << ") = ";
-    //                         std::cout << M(m, s, i, r, j, c) << std::endl;
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 
 
-    //============= Test of MainAuxiliaryMatrix =============//
     std::cout << "========== Test of MainAuxiliaryMatrix ==========" << std::endl;
-    MainAuxiliaryMatrix(strands, M, Nussinov_matrices);
+    MainAuxiliaryMatrix(strands, M, nussinov_matrices);
 
 
     // std::cout << " ========== Test of the class output_backtrack ==========" << std::endl;
@@ -694,25 +749,6 @@ int main() {
     // output.print();
 
 
-    // std::cout << "========== Test of the nussinov_backtrack function ==========" << std::endl;
-    // int test_sequence_length = 7;
-    // std::unordered_map<int, std::string> test_strands;
-    // test_strands[1] = "$AAACUUU";
-    // test_strands[2] = "$AAACUUU";
-    // std::unordered_map<std::string, Matrix2D> test_Nussinov_matrices;
-    // for (const auto& pair : test_strands) {
-    //     const auto& seq = pair.second;
-    //     std::cout << "  Energy matrix for sequence : " << seq << std::endl;
-    //     Matrix2D test_energy_matrix(test_sequence_length, test_sequence_length);
-    //     FillMatrix(seq, test_energy_matrix);
-    //     test_Nussinov_matrices[seq] = test_energy_matrix;
-    //     print_matrix(test_energy_matrix,seq);
-    //     std::cout << std::endl;
-    // }
-    // output_backtrack test_output = nussinov_backtrack(1,1,test_sequence_length,test_strands,test_Nussinov_matrices);
-    // test_output.print();
-
-
     std::cout << "========== Test of the full_backtrack function ==========" << std::endl;
 
     std::cout << " ====== Recall ====== " << std::endl;
@@ -726,14 +762,10 @@ int main() {
     }
     std::cout << " ==================== " << std::endl;
 
+    full_backtrack(strands, M, nussinov_matrices);
 
-    full_backtrack(strands, M, Nussinov_matrices);
-    // std::vector<int> starting_point = Find_start_backtrack(M);
-    // std::cout << "Starting point : M(" << starting_point[0] << "," << starting_point[1] << "," << starting_point[2] << "," << starting_point[3] << "," << starting_point[4] << "," << starting_point[5] << ") = " << M(starting_point[0], starting_point[1], starting_point[2], starting_point[3], starting_point[4], starting_point[5]) << std::endl;
+    std::cout << "\n==================== End of the program ====================" << std::endl << std::endl;
 
-    // output_backtrack secondary_structure = square_backtrack(2,1,1,3,3,1,strands,M,Nussinov_matrices);
-    // secondary_structure.add_sequence(starting_point[3]);
-    // secondary_structure.add_sequence_front(starting_point[1]);
-    // secondary_structure.print();
+
     return 0;
 }
