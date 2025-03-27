@@ -103,16 +103,19 @@ class output_backtrack{
      * 
      */
     public:
+    ~output_backtrack() {
+    std::cout << "Destructor called for output_backtrack" << std::endl;
+    }
     void add_sequence(int sequence){
         list_of_sequences.push_back(sequence);
+    }
+    void add_sequence_front(int sequence){
+        list_of_sequences.insert(list_of_sequences.begin(),sequence);
     }
     void add_pair(int x, int i, int y, int j){
         list_of_pairs.push_back({x,i,y,j});
     }
     void shift(int shift){
-        for (int i =0; i<int(list_of_sequences.size()); i++){
-            list_of_sequences[i] += shift;
-        }
         for (int i=0; i<int(list_of_pairs.size()); i++){
             list_of_pairs[i][0] += shift;
             list_of_pairs[i][2] += shift;
@@ -383,7 +386,7 @@ output_backtrack nussinov_backtrack(int s, int i, int j,std::unordered_map<int, 
      * 
      * @return output_backtrack : the secondary structure
      */
-
+    std::cout << "Nussinov backtrack" << std::endl;
     if (j-i < theta){
         return output_backtrack();
     }
@@ -455,9 +458,7 @@ output_backtrack bubble_bakctrack(int m, int s, int i, int r, int j, int c, std:
                 std::cout << "CASE2" << std::endl;
                 output_backtrack output1 = nussinov_backtrack(s,i+1,k-1,strands,Nussinov_matrices);
                 output1.add_pair(1,i,1,k); // we add the pair between i and k of strand s 
-                output1.shift(M.get_m_size()-(m+1)); //TODO very unclear. Needs a clean explanation (the idea is that we have m remaining strands in the soup + the final strand. So we have m_start - (m+1) before the nussinov. m_start = M.get_m_size() + 1. (we shift by the amount -1 (intial value at 1)
-                output_backtrack output2 = square_backtrack(m,s,k+1,r,j,c,strands,M,Nussinov_matrices);//TODO we have to implement the square backtrack
-                output2.shift(M.get_m_size()-(m+1));
+                output_backtrack output2 = square_backtrack(m,s,k+1,r,j,c,strands,M,Nussinov_matrices);
                 output1.merge(output2,0);
                 return output1;
             }
@@ -474,10 +475,14 @@ output_backtrack bubble_bakctrack(int m, int s, int i, int r, int j, int c, std:
                         if (M(m,s,i,r,j,c) == pair_energy + M(m1,s,i+1,t,k-1,0) + M(m2,t,k+1,r,j,c)){
                             std::cout << "CASE3" << std::endl;
                             output_backtrack output1 = square_backtrack(m1,s,i+1,t,k-1,0,strands,M,Nussinov_matrices);
+                            std::cout << "TESTA" << std::endl;
                             output1.add_pair(1,i,1+m1+1,k);
-                            output1.shift(M.get_m_size()-(m+1)); // we have m+1 strands behind
-                            output_backtrack output2 = square_backtrack(m2,t,k+1,r,j,c,strands,M,Nussinov_matrices);
-                            output2.shift(M.get_m_size()-(m2+1));
+                            output1.add_sequence(t);
+                            output_backtrack output2 = square_backtrack(m2,t,k+1,r,j,c,strands,M,Nussinov_matrices); // there is a problem here
+                            std::cout << "TESTB" << std::endl;
+                            output2.shift(1+m1);
+                            std::cout << "shift + " << 1+m1+1 << std::endl;
+                            std::cout << "m=" << m << " m1=" << m1 << " m2=" << m2 << std::endl;
                             output1.merge(output2,0);
                             return output1;
                         }
@@ -492,21 +497,18 @@ output_backtrack bubble_bakctrack(int m, int s, int i, int r, int j, int c, std:
         if (can_pair(strands.at(s)[i],strands.at(r)[k])){
             if (k == int(strands.at(r).length()-1)){
                 if (M(m,s,i,r,j,c) == pair_energy + M(m,s,i+1,r,k-1,0)){
-                    std::cout << "CASE4" << std::endl;
+                    std::cout << "CASE4.1" << std::endl;
                     output_backtrack output = square_backtrack(m,s,i+1,r,k-1,0,strands,M,Nussinov_matrices);
                     output.add_pair(1,i,1+m+1,k);
-                    output.shift(M.get_m_size()-(m+1));
                     return output;
                 }
             }
             else{
                 if (M(m,s,i,r,j,c) == pair_energy + M(m,s,i+1,r,k-1,0) + Nussinov_matrices[strands.at(r)](k+1,j)){
-                    std::cout << "CASE4" << std::endl;
+                    std::cout << "CASE4.2" << std::endl;
                     output_backtrack output1 = square_backtrack(m,s,i+1,r,k-1,0,strands,M,Nussinov_matrices);
                     output1.add_pair(1,i,1+m+1,k);
-                    output1.shift(M.get_m_size()-(m+1));
                     output_backtrack output2 = nussinov_backtrack(r,k+1,j,strands,Nussinov_matrices);
-                    output2.shift(M.get_m_size()); //no strands behind
                     output1.merge(output2,0);
                     return output1;
                 }
@@ -553,6 +555,8 @@ output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std:
                 for (int t=1; t<=M.get_s_size();t++){
                     if (M(m,s,i,r,j,c) == M(m-1,t,1,r,j,1)){
                         output_backtrack output = square_backtrack(m-1,t,1,r,j,1,strands,M,Nussinov_matrices);
+                        output.add_sequence(t);
+                        output.shift(1);
                         return output;
                     }
                 }
@@ -572,6 +576,7 @@ output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std:
                     for (int t=1; t<=M.get_s_size();t++){
                         if (M(m,s,i,r,j,c) == M(m-1,s,i,t,strands.at(t).length()-1,1)){
                             output_backtrack output = square_backtrack(m-1,s,i,t,strands.at(t).length()-1,1,strands,M,Nussinov_matrices);
+                            output.add_sequence(t);
                             return output;
                         }
                     }
@@ -730,6 +735,8 @@ int main() {
 
     std::cout << "========== Test of the full_backtrack function ==========" << std::endl;
     output_backtrack secondary_structure = square_backtrack(2,1,1,3,3,1,strands,M,Nussinov_matrices);
+    secondary_structure.add_sequence(starting_point[3]);
+    secondary_structure.add_sequence_front(starting_point[1]);
     secondary_structure.print();
     return 0;
 }
