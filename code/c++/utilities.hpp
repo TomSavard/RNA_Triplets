@@ -126,6 +126,15 @@ void print_matrix(const Matrix2D& m, const std::string& sequence, int cellWidth 
  */
 std::string generate_random_sequence(int length);
 
+/**
+ * @brief Generates a Triplet Repeat.
+ * @param sequence The sequence to be repeated.
+ * @param number_of_repeats The number of times to repeat the sequence.
+ * 
+ * @return The triplet repeat
+ */
+std::string generate_triplet_repeat(std::string sequence, int number_of_repeats);
+
 
 
 #endif //UTILITIES_HPP

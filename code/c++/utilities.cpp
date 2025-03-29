@@ -269,6 +269,28 @@ std::string generate_random_sequence(int length) {
 }
 
 
+/**
+ * @brief Generate a triplet repeat sequence.
+ * 
+ * This function generates a sequence consisting of a specified number of repeats of a given triplet.
+ * 
+ * @param sequence (std::string): The triplet to be repeated.
+ * @param number_of_repeats (int): The number of times the triplet should be repeated.
+ * 
+ * @return std::string: The generated triplet repeat sequence.
+ */
+std::string generate_triplet_repeat(std::string sequence, int number_of_repeats) {
+    if (number_of_repeats < 0) {
+        std::cerr << "Error: Length must be non-negative." << std::endl;
+        return "";
+    }
+    std::string triplet = "$";
+    for (int i = 0; i < number_of_repeats; ++i) {
+        triplet += sequence;
+    }
+    return triplet;
+}
+
 
 
 
@@ -319,6 +341,13 @@ int main() {
 
     std::cout << "========== Test of the function generate_random_sequence ==========" << std::endl;
     std::cout << "  Random sequence: " << generate_random_sequence(10) << std::endl;
+
+    std::cout << "========== Test of the function generate_triplet_repeat ==========" << std::endl;
+    std::string triplet = generate_triplet_repeat(3, "AAA");
+    std::cout << "  Triplet repeat: " << triplet << std::endl;
+    triplet = generate_triplet_repeat(3, "CGU");
+    std::cout << "  Triplet repeat: " << triplet << std::endl;
+
 
     std::cout << "========== End of the utilities test ==========" << std::endl << std::endl;
     return 0;

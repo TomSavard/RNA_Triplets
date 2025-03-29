@@ -27,11 +27,14 @@
 
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <cstdlib>
 #include <ctime>
 #include <limits>
+#include <chrono> 
+#include <iomanip> 
 
 #include "nussinov.hpp"
 #include "utilities.hpp"
@@ -125,10 +128,15 @@ private:
  * @class output_backtrack
  * @brief Class to manage the backtracking output from RNA folding calculations of the strand_soup algorithm.
  * 
+ * This class stores the sequences and pairs of nucleotides that are part of the optimal secondary structure.
+ * It provides methods to add sequences and pairs, shift indices, merge outputs from subproblems, and print the results.
  */
 class output_backtrack{
 
     public:
+    std::vector<int> list_of_sequences;
+    std::vector<std::vector<int>> list_of_pairs;
+
     /**
      * @brief Add a sequence to the end of the list of sequences.
      * 
@@ -202,10 +210,6 @@ class output_backtrack{
         }
         std::cout << std::endl;
     }
-
-    private:
-    std::vector<int> list_of_sequences;
-    std::vector<std::vector<int>> list_of_pairs;
 };
 
 
@@ -357,14 +361,14 @@ void MainAuxiliaryMatrix(std::unordered_map<int, std::string> strands, Matrix6D&
                                 }
                                 
                             }
-                            //Displaying the values of the matrix with colors (red for borders, green for acceptable values (c==1), white for the rest)
-                            if (i == 0 || j== 0 || i == M.get_i_size() + 1 || j == M.get_j_size() + 1){
-                                std::cout << RED << "M(" << m << "," << s << "," << i << "," << r << "," << j << "," << c << ") = " << M(m,s,i,r,j,c) << RESET << std::endl;
-                            }
-                            else{
-                                if (c ==1){std::cout << GREEN << "M(" << m << "," << s << "," << i << "," << r << "," << j << "," << c << ") = " << M(m,s,i,r,j,c) << RESET << std::endl;}
-                                else{std::cout << "M(" << m << "," << s << "," << i << "," << r << "," << j << "," << c << ") = " << M(m,s,i,r,j,c) << std::endl;}
-                            }
+                            // //Displaying the values of the matrix with colors (red for borders, green for acceptable values (c==1), white for the rest)
+                            // if (i == 0 || j== 0 || i == M.get_i_size() + 1 || j == M.get_j_size() + 1){
+                            //     std::cout << RED << "M(" << m << "," << s << "," << i << "," << r << "," << j << "," << c << ") = " << M(m,s,i,r,j,c) << RESET << std::endl;
+                            // }
+                            // else{
+                            //     if (c ==1){std::cout << GREEN << "M(" << m << "," << s << "," << i << "," << r << "," << j << "," << c << ") = " << M(m,s,i,r,j,c) << RESET << std::endl;}
+                            //     else{std::cout << "M(" << m << "," << s << "," << i << "," << r << "," << j << "," << c << ") = " << M(m,s,i,r,j,c) << std::endl;}
+                            // }
                         }
                     }
                 }
@@ -641,15 +645,17 @@ output_backtrack square_backtrack(int m, int s, int i, int r, int j, int c, std:
  * 
  * @return void
  */
-void full_backtrack(const std::unordered_map<int, std::string> strands, Matrix6D& M, const std::unordered_map<std::string, Matrix2D> nussinov_matrices){
+output_backtrack full_backtrack(const std::unordered_map<int, std::string> strands, Matrix6D& M, const std::unordered_map<std::string, Matrix2D> nussinov_matrices){
 
     std::vector<int> starting_point;
-    try{
+    try {
         starting_point = Find_start_backtrack(M);
-    }
-    catch (const std::runtime_error& e){
-        std::cerr << e.what() << std::endl;
-        exit(EXIT_FAILURE);
+    } catch (const std::runtime_error& e) {
+        // Handle the case where no valid starting point is found
+        std::cerr << "Warning: " << e.what() << " Setting repartition to zero." << std::endl;
+
+        // Return an empty secondary structure
+        return output_backtrack();
     }
     std::cout << "Starting point: M(" 
     << starting_point[0] << "," << starting_point[1] << "," 
@@ -667,7 +673,180 @@ void full_backtrack(const std::unordered_map<int, std::string> strands, Matrix6D
     secondary_structure.add_sequence(starting_point[3]); // we need to add the starting strand
     secondary_structure.add_sequence_front(starting_point[1]); // and the ending strand
     secondary_structure.print(); 
+
+    return secondary_structure;
 }
+
+
+
+//=============================================================================================//
+
+
+void compute_triplet_probabilities(){
+    // STEP 1: Generate all RNA Triplets
+    std::vector<std::string> triplets;
+    std::string bases = "AUCG";
+    for (char b1 : bases) {
+        for (char b2 : bases) {
+            for (char b3 : bases) {
+                triplets.push_back(std::string(1, b1) + b2 + b3);
+            }
+        }
+    }
+
+
+
+    std::ofstream internal_file("internal.csv");
+    std::ofstream homogeneous_file("homogeneous.csv");
+    std::ofstream heterogeneous_file("heterogeneous.csv");
+
+    if (!internal_file.is_open() || !homogeneous_file.is_open() || !heterogeneous_file.is_open()) {
+        std::cerr << "Error: Unable to open one or more files for writing." << std::endl;
+        return;
+    }
+
+    internal_file << ",";
+    homogeneous_file << ",";
+    heterogeneous_file << ",";
+    // Write the triplets as column headers without a trailing comma
+    for (size_t i = 0; i < triplets.size(); ++i) {
+        internal_file << triplets[i];
+        homogeneous_file << triplets[i];
+        heterogeneous_file << triplets[i];
+        // Add a comma only if it's not the last triplet
+        if (i != triplets.size() - 1) {
+            internal_file << ",";
+            homogeneous_file << ",";
+            heterogeneous_file << ",";
+        }
+    }
+    internal_file << "\n";
+    homogeneous_file << "\n";
+    heterogeneous_file << "\n";
+
+
+
+    int total_combinations = triplets.size() * triplets.size();
+    int current_combination = 0;
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    // STEP 2: Iterate over each triplet
+    for (const auto& triplet1 : triplets) {
+        std::string strand1 = generate_triplet_repeat(triplet1, 2);
+        internal_file << triplet1 << ",";
+        homogeneous_file << triplet1 << ",";
+        heterogeneous_file << triplet1 << ",";
+
+        for (const auto& triplet2 : triplets){
+            std::cout << "\n========== Triplet : " <<  triplet1 << " and " << triplet2 << "==========" << std::endl;
+            std::string strand2 = generate_triplet_repeat(triplet2, 2);
+            
+            // Create strands map
+            std::unordered_map<int, std::string> strands = {
+            {1, strand1},
+            {2, strand2}};
+
+            // STEP3 : Compute Nussinov matrices
+            std::unordered_map<std::string, Matrix2D> nussinov_matrices;
+            for (const auto& pair : strands) {
+                const auto& seq = pair.second;
+                Matrix2D energy_matrix(seq.length()-1, seq.length()-1);
+                FillMatrix(seq, energy_matrix);
+                nussinov_matrices[seq] = energy_matrix;
+                // print_matrix(energy_matrix,seq);
+            }
+
+            // STEP 4: Compute the 6D matrix
+            int m_size = 2;
+            int s_size = strands.size();
+            int i_size = strand1.length()-1; // Length of the strand without the '$'
+            int r_size = strands.size();
+            int j_size = strand2.length()-1;
+            int c_size = 2; // Connectivity: 0 or 1
+            Matrix6D M(m_size, s_size, i_size, r_size, j_size, c_size);
+            MainAuxiliaryMatrix(strands, M, nussinov_matrices);
+
+            // STEP 5 : Backtrack the secondary structure
+            output_backtrack secondary_structure = full_backtrack(strands, M, nussinov_matrices);
+
+            // STEP 6 : Compute the repartition of pairs
+            int internal = 0;
+            int homogeneous = 0;
+            int heterogeneous = 0;
+
+            for (const auto& pair : secondary_structure.list_of_pairs){
+                int strand1 = pair[0];
+                int strand2 = pair[2];
+                if (strand1 == strand2){
+                    internal++;
+                }
+                else {
+                    if (secondary_structure.list_of_sequences[strand1-1] == secondary_structure.list_of_sequences[strand2-1]){
+                        homogeneous++;
+                    }
+                    else {
+                        heterogeneous++;
+                    }
+                }
+            }
+            int total = internal + homogeneous + heterogeneous;
+            if (total > 0) {
+                // Write the results to the respective CSV files
+                internal_file << std::fixed << std::setprecision(3) << static_cast<float>(internal) / total;
+                homogeneous_file << std::fixed << std::setprecision(3) << static_cast<float>(homogeneous) / total;
+                heterogeneous_file << std::fixed << std::setprecision(3) << static_cast<float>(heterogeneous) / total;
+                std::cout << "Internal : " << static_cast<float>(internal) / total << std::endl;
+                std::cout << "Homogeneous : " << static_cast<float>(homogeneous) / total << std::endl;
+                std::cout << "Heterogeneous : " << static_cast<float>(heterogeneous) / total << std::endl;
+            } else {
+                internal_file << "0";
+                homogeneous_file << "0";
+                heterogeneous_file << "0";
+            }
+            // Add a comma only if it's not the last column
+            if (triplet2 != triplets.back()) {
+                internal_file << ",";
+                homogeneous_file << ",";
+                heterogeneous_file << ",";
+            }
+
+            // Update progress
+            current_combination++;
+            float progress = (float(current_combination) / total_combinations) * 100;
+
+            // Display progress bar
+            std::cout << "\rProgress: [";
+            int bar_width = 50;
+            int pos = bar_width * progress / 100;
+            for (int i = 0; i < bar_width; ++i) {
+                if (i < pos) std::cout << "=";
+                else if (i == pos) std::cout << ">";
+                else std::cout << " ";
+            }
+            std::cout << "] " << std::fixed << std::setprecision(2) << progress << "%";
+            std::cout.flush();
+        }
+        // End the current row in each file
+        internal_file << "\n";
+        homogeneous_file << "\n";
+        heterogeneous_file << "\n";
+    }
+    // End timing
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_time = end_time - start_time;
+
+    // Display elapsed time
+    std::cout << "\nComputation completed in " << elapsed_time.count() << " seconds." << std::endl;
+    std::cout << "Results saved to internal.csv, homogeneous.csv, and heterogeneous.csv" << std::endl;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -682,13 +861,18 @@ void full_backtrack(const std::unordered_map<int, std::string> strands, Matrix6D
 
 
 
+
+
+
+
 int main() {
     std::cout << "\n==================== Strand Soup ====================" << std::endl;
+    auto start_time = std::chrono::high_resolution_clock::now();
     srand(time(0)); // Initialiser le générateur de nombres aléatoires
 
     std::cout << "\n========== Setting the parameters ==========" << std::endl;
-    int m_start = 3; // Number of sequences to generate
-    int sequence_length = 7; // length of the sequences
+    int m_start = 3; // Number of sequences in total 
+    int sequence_length = 6; // length of the sequences
     std::cout << "  Number of strands : m = " << m_start << std::endl;
     std::cout << "  Length of the sequences : " << sequence_length << std::endl;
     std::cout << "  Theta : " << theta << std::endl;
@@ -697,9 +881,10 @@ int main() {
 
     std::cout << "\n========== Generation of the strands ==========" << std::endl;
     std::unordered_map<int, std::string> strands;
-    strands[1] = "$AAAAAAC";
-    strands[2] = "$GGGGGGU";
-    strands[3] = "$AUUUUUU";
+    strands[1] = generate_triplet_repeat("GUU", 2);
+    strands[2] = generate_triplet_repeat("CAG", 2);
+    strands[3] = generate_triplet_repeat("ACG", 2);
+    // strands[2] = "$GCGCGCGCGC";
     // strands[3] = "$UUU";
     // strands[4] = "$UUU";
     std::cout << "Generated strands:" << std::endl;
@@ -762,10 +947,25 @@ int main() {
     }
     std::cout << " ==================== " << std::endl;
 
-    full_backtrack(strands, M, nussinov_matrices);
+    output_backtrack secondary_structure = full_backtrack(strands, M, nussinov_matrices);
+
+
+
+    std::cout << "\n========== Test of the compute_interaction_matrix function ==========" << std::endl;
+    // around 30 minutes for m_start = 2 and strand_length = 10*3
+    // 40s for m_start = 2 and strand_length = 2*3
+    compute_triplet_probabilities();
+
+
+
 
     std::cout << "\n==================== End of the program ====================" << std::endl << std::endl;
+    // End timing
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_time = end_time - start_time;
 
+    // Display elapsed time
+    std::cout << "\nComputation completed in " << elapsed_time.count() << " seconds." << std::endl << std::endl;
 
     return 0;
 }
